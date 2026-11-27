@@ -257,6 +257,9 @@ android {
     versionCode = (canonicalVersionCode * maxHotfixVersions) + possibleHotfixVersions[currentHotfixVersion]
     versionName = canonicalVersionName
 
+    // Fork: use a separate application id so this build installs alongside official Signal.
+    applicationId = "org.thoughtcrime.securesms.sms"
+
     if (isInstrumentationTestRun) {
       applicationIdSuffix = ".test_run"
     }
