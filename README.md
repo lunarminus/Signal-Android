@@ -61,7 +61,7 @@ The same screen has the other options: prefer Signal when available, carrier del
 ## Known limitations
 
 - Not yet tested on a real phone, and the builds are debug builds signed with a debug key. A release build would need its own signing key, so it couldn't update over a debug install.
-- The app icon and much of the in-app text still say "Signal".
+- Only the English text has been reworded. Other languages still call the app "Signal" in places where they mean the app.
 - Disappearing-message timers don't apply to texts.
 - Push notifications may fall back to a slower background connection under the new app ID, which can use more battery.
 - RCS isn't supported yet. It will be added as another transport once GrapheneOS exposes RCS to apps.
