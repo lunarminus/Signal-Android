@@ -28,7 +28,9 @@ import org.signal.core.ui.compose.theme.SignalTheme
 import org.thoughtcrime.securesms.PassphraseRequiredActivity
 import org.thoughtcrime.securesms.R
 import org.thoughtcrime.securesms.external.DefaultSmsApp
+import org.thoughtcrime.securesms.dependencies.AppDependencies
 import org.thoughtcrime.securesms.external.ExternalMessagingPreferences
+import org.thoughtcrime.securesms.external.system.SystemMessageImportJob
 
 /**
  * Settings for external (SMS/MMS) messaging: the master switch, the default-SMS-app role and a few
@@ -57,6 +59,8 @@ class ExternalMessagingSettingsActivity : PassphraseRequiredActivity() {
       ExternalMessagingPreferences.isEnabled = true
       if (!DefaultSmsApp.isDefault(this)) {
         requestDefaultRole()
+      } else {
+        importOnceIfNeeded()
       }
     } else {
       Toast.makeText(this, R.string.ExternalMessagingSettings__permissions_needed, Toast.LENGTH_LONG).show()
@@ -68,6 +72,7 @@ class ExternalMessagingSettingsActivity : PassphraseRequiredActivity() {
     if (DefaultSmsApp.isDefault(this)) {
       ExternalMessagingPreferences.isEnabled = true
     }
+    importOnceIfNeeded()
     refresh()
   }
 
@@ -83,7 +88,8 @@ class ExternalMessagingSettingsActivity : PassphraseRequiredActivity() {
           onDefaultAppClicked = ::onDefaultAppClicked,
           onDeliveryReportsChanged = { ExternalMessagingPreferences.isDeliveryReportsEnabled = it; refresh() },
           onSystemCopyChanged = { ExternalMessagingPreferences.isWriteToSystemProviderEnabled = it; refresh() },
-          onPreferSignalChanged = { ExternalMessagingPreferences.isPreferSignalWhenAvailable = it; refresh() }
+          onPreferSignalChanged = { ExternalMessagingPreferences.isPreferSignalWhenAvailable = it; refresh() },
+          onImportClicked = ::startImport
         )
       }
     }
@@ -101,8 +107,30 @@ class ExternalMessagingSettingsActivity : PassphraseRequiredActivity() {
       hasTelephony = DefaultSmsApp.hasTelephony(this),
       deliveryReports = ExternalMessagingPreferences.isDeliveryReportsEnabled,
       systemCopy = ExternalMessagingPreferences.isWriteToSystemProviderEnabled,
-      preferSignal = ExternalMessagingPreferences.isPreferSignalWhenAvailable
+      preferSignal = ExternalMessagingPreferences.isPreferSignalWhenAvailable,
+      importState = ExternalMessagingPreferences.importState,
+      importedCount = ExternalMessagingPreferences.importedMessageCount
     )
+  }
+
+  /** Copies the texts already on the phone into Signal SMS. Safe to run again: it only picks up what's new. */
+  private fun startImport() {
+    if (!SystemMessageImportJob.canRun(this)) {
+      permissionLauncher.launch(REQUIRED_PERMISSIONS)
+      return
+    }
+
+    ExternalMessagingPreferences.importState = ExternalMessagingPreferences.ImportState.RUNNING
+    AppDependencies.jobManager.add(SystemMessageImportJob())
+    Toast.makeText(this, R.string.ExternalMessagingSettings__import_started, Toast.LENGTH_LONG).show()
+    refresh()
+  }
+
+  /** The first time SMS/MMS is set up, bring the phone's existing texts along. */
+  private fun importOnceIfNeeded() {
+    if (ExternalMessagingPreferences.isEnabled && ExternalMessagingPreferences.importState == ExternalMessagingPreferences.ImportState.NEVER && SystemMessageImportJob.canRun(this)) {
+      startImport()
+    }
   }
 
   private fun onEnabledChanged(enabled: Boolean) {
@@ -146,7 +174,9 @@ class ExternalMessagingSettingsActivity : PassphraseRequiredActivity() {
     val hasTelephony: Boolean = true,
     val deliveryReports: Boolean = false,
     val systemCopy: Boolean = true,
-    val preferSignal: Boolean = true
+    val preferSignal: Boolean = true,
+    val importState: ExternalMessagingPreferences.ImportState = ExternalMessagingPreferences.ImportState.NEVER,
+    val importedCount: Int = 0
   )
 }
 
@@ -158,7 +188,8 @@ private fun SettingsScreen(
   onDefaultAppClicked: () -> Unit,
   onDeliveryReportsChanged: (Boolean) -> Unit,
   onSystemCopyChanged: (Boolean) -> Unit,
-  onPreferSignalChanged: (Boolean) -> Unit
+  onPreferSignalChanged: (Boolean) -> Unit,
+  onImportClicked: () -> Unit
 ) {
   Scaffolds.Settings(
     title = stringResource(R.string.ExternalMessagingSettings__title),
@@ -182,6 +213,19 @@ private fun SettingsScreen(
           label = stringResource(if (state.isDefaultApp) R.string.ExternalMessagingSettings__is_default else R.string.ExternalMessagingSettings__not_default),
           enabled = state.hasTelephony,
           onClick = onDefaultAppClicked
+        )
+      }
+
+      item {
+        Rows.TextRow(
+          text = stringResource(R.string.ExternalMessagingSettings__import),
+          label = when (state.importState) {
+            ExternalMessagingPreferences.ImportState.NEVER -> stringResource(R.string.ExternalMessagingSettings__import_summary)
+            ExternalMessagingPreferences.ImportState.RUNNING -> stringResource(R.string.ExternalMessagingSettings__import_running)
+            ExternalMessagingPreferences.ImportState.DONE -> stringResource(R.string.ExternalMessagingSettings__import_done, state.importedCount)
+          },
+          enabled = state.enabled && state.importState != ExternalMessagingPreferences.ImportState.RUNNING,
+          onClick = onImportClicked
         )
       }
 

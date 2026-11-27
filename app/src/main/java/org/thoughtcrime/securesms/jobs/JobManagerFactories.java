@@ -222,6 +222,7 @@ public final class JobManagerFactories {
       put(org.thoughtcrime.securesms.external.mms.MmsSendJob.KEY,      new org.thoughtcrime.securesms.external.mms.MmsSendJob.Factory());
       put(org.thoughtcrime.securesms.external.mms.MmsDownloadJob.KEY,  new org.thoughtcrime.securesms.external.mms.MmsDownloadJob.Factory());
       put(org.thoughtcrime.securesms.external.mms.MmsResultJob.KEY,    new org.thoughtcrime.securesms.external.mms.MmsResultJob.Factory());
+      put(org.thoughtcrime.securesms.external.system.SystemMessageImportJob.KEY, new org.thoughtcrime.securesms.external.system.SystemMessageImportJob.Factory());
       put(LeaveGroupV2WorkerJob.KEY,                   new LeaveGroupV2WorkerJob.Factory());
       put(LinkedDeviceInactiveCheckJob.KEY,            new LinkedDeviceInactiveCheckJob.Factory());
       put(LocalArchiveJob.KEY,                         new LocalArchiveJob.Factory());

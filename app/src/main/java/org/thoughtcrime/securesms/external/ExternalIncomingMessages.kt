@@ -68,7 +68,8 @@ object ExternalIncomingMessages {
     receivedTimeMillis: Long = System.currentTimeMillis(),
     subscriptionId: Int = -1,
     attachments: List<Attachment> = emptyList(),
-    groupId: GroupId? = null
+    groupId: GroupId? = null,
+    notify: Boolean = true
   ): MessageTable.InsertResult? {
     val sender = Recipient.resolved(from)
     if (sender.isBlocked) {
@@ -102,7 +103,9 @@ object ExternalIncomingMessages {
     }
 
     Log.i(TAG, "Inserted incoming ${type.id} as message ${result.messageId} in thread ${result.threadId}")
-    AppDependencies.messageNotifier.updateNotification(context, ConversationId.forConversation(result.threadId))
+    if (notify) {
+      AppDependencies.messageNotifier.updateNotification(context, ConversationId.forConversation(result.threadId))
+    }
     return result
   }
 }

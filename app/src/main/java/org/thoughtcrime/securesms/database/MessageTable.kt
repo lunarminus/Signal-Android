@@ -2391,6 +2391,27 @@ open class MessageTable(context: Context?, databaseHelper: SignalDatabase) : Dat
   }
 
   /** Fork: marks a message sent over an external transport (SMS/MMS) as sent, without the secure/push bits. */
+  /** Fork: whether [threadId] already holds a message sent at [dateSent] with [body], so an import doesn't add it twice. */
+  fun hasMessageWithDateSentAndBody(threadId: Long, dateSent: Long, body: String?): Boolean {
+    return readableDatabase
+      .exists(TABLE_NAME)
+      .where("$THREAD_ID = ? AND $DATE_SENT = ? AND IFNULL($BODY, '') = ?", threadId, dateSent, body ?: "")
+      .run()
+  }
+
+  /** Fork: gives an imported message its original time and read state. */
+  fun setImportedMessageState(messageId: Long, dateReceived: Long, read: Boolean) {
+    writableDatabase
+      .update(TABLE_NAME)
+      .values(
+        DATE_RECEIVED to dateReceived,
+        READ to if (read) 1 else 0,
+        NOTIFIED to 1
+      )
+      .where("$ID = ?", messageId)
+      .run()
+  }
+
   /** Fork: the subset of [messageIds] that didn't come over Signal (SMS/MMS), which must never get Signal receipts. */
   fun getInsecureMessageIds(messageIds: Collection<Long>): Set<Long> {
     return SqlUtil.buildCollectionQuery(ID, messageIds).flatMap { query ->

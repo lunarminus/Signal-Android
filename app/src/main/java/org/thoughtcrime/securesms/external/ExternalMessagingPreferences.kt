@@ -22,6 +22,10 @@ object ExternalMessagingPreferences {
   private const val KEY_DELIVERY_REPORTS = "sms_delivery_reports"
   private const val KEY_WRITE_TO_SYSTEM_PROVIDER = "write_to_system_provider"
   private const val KEY_PREFER_SIGNAL = "prefer_signal_when_available"
+  private const val KEY_IMPORT_STATE = "system_import_state"
+  private const val KEY_IMPORTED_COUNT = "system_import_count"
+  private const val KEY_LAST_IMPORTED_SMS_ID = "system_import_last_sms_id"
+  private const val KEY_LAST_IMPORTED_MMS_ID = "system_import_last_mms_id"
 
   private val prefs: SharedPreferences
     get() = AppDependencies.application.getSharedPreferences(FILE, Context.MODE_PRIVATE)
@@ -53,4 +57,30 @@ object ExternalMessagingPreferences {
   var isPreferSignalWhenAvailable: Boolean
     get() = prefs.getBoolean(KEY_PREFER_SIGNAL, true)
     set(value) = prefs.edit { putBoolean(KEY_PREFER_SIGNAL, value) }
+
+  enum class ImportState { NEVER, RUNNING, DONE }
+
+  /** Where the import of texts already on the phone stands. */
+  @JvmStatic
+  var importState: ImportState
+    get() = ImportState.entries.getOrNull(prefs.getInt(KEY_IMPORT_STATE, 0)) ?: ImportState.NEVER
+    set(value) = prefs.edit { putInt(KEY_IMPORT_STATE, value.ordinal) }
+
+  /** How many texts have been imported from the phone so far. */
+  @JvmStatic
+  var importedMessageCount: Int
+    get() = prefs.getInt(KEY_IMPORTED_COUNT, 0)
+    set(value) = prefs.edit { putInt(KEY_IMPORTED_COUNT, value) }
+
+  /** The newest system SMS row already imported, so a later import only reads what's new. */
+  @JvmStatic
+  var lastImportedSmsId: Long
+    get() = prefs.getLong(KEY_LAST_IMPORTED_SMS_ID, 0L)
+    set(value) = prefs.edit { putLong(KEY_LAST_IMPORTED_SMS_ID, value) }
+
+  /** The newest system MMS row already imported. */
+  @JvmStatic
+  var lastImportedMmsId: Long
+    get() = prefs.getLong(KEY_LAST_IMPORTED_MMS_ID, 0L)
+    set(value) = prefs.edit { putLong(KEY_LAST_IMPORTED_MMS_ID, value) }
 }

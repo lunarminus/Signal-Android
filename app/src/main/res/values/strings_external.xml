@@ -46,4 +46,9 @@
     <string name="ExternalMessagingSettings__prefer_signal_summary">Use Signal for contacts who are on Signal. Long-press the send button to switch.</string>
     <!-- Toast when SMS permissions were denied -->
     <string name="ExternalMessagingSettings__permissions_needed">Signal SMS needs SMS permissions to send and receive texts.</string>
+    <string name="ExternalMessagingSettings__import">Import texts from your phone</string>
+    <string name="ExternalMessagingSettings__import_summary">Bring the texts already on your phone into Signal SMS</string>
+    <string name="ExternalMessagingSettings__import_running">Importing your texts…</string>
+    <string name="ExternalMessagingSettings__import_done">%1$d texts imported. Tap to check for new ones.</string>
+    <string name="ExternalMessagingSettings__import_started">Importing your texts. They\'ll appear in your chats as they\'re copied.</string>
 </resources>
