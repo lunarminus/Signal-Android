@@ -41,10 +41,12 @@ object MediaSendLauncher {
   }
 
   @JvmStatic
+  @JvmOverloads
   fun camera(
     context: Context,
     recipientId: RecipientId,
-    isReply: Boolean
+    isReply: Boolean,
+    allowPreUpload: Boolean = true
   ): Intent {
     return v3Intent(
       context,
@@ -52,7 +54,8 @@ object MediaSendLauncher {
         isCameraFirst = true,
         mode = MediaSendFlowActivityContract.Mode.SingleRecipient,
         recipientId = recipientId.toMediaRecipientId(),
-        isReply = isReply
+        isReply = isReply,
+        allowPreUpload = allowPreUpload
       )
     )
   }
@@ -82,12 +85,14 @@ object MediaSendLauncher {
   }
 
   @JvmStatic
+  @JvmOverloads
   fun gallery(
     context: Context,
     media: List<Media>,
     recipientId: RecipientId,
     message: CharSequence?,
-    isReply: Boolean
+    isReply: Boolean,
+    allowPreUpload: Boolean = true
   ): Intent {
     return v3Intent(
       context,
@@ -96,17 +101,20 @@ object MediaSendLauncher {
         recipientId = recipientId.toMediaRecipientId(),
         initialMedia = media,
         initialMessage = message,
-        isReply = isReply
+        isReply = isReply,
+        allowPreUpload = allowPreUpload
       )
     )
   }
 
   @JvmStatic
+  @JvmOverloads
   fun editor(
     context: Context,
     media: List<Media>,
     recipientId: RecipientId,
-    message: CharSequence?
+    message: CharSequence?,
+    allowPreUpload: Boolean = true
   ): Intent {
     return v3Intent(
       context,
@@ -114,7 +122,8 @@ object MediaSendLauncher {
         mode = MediaSendFlowActivityContract.Mode.SingleRecipient,
         recipientId = recipientId.toMediaRecipientId(),
         initialMedia = media,
-        initialMessage = message
+        initialMessage = message,
+        allowPreUpload = allowPreUpload
       )
     )
   }

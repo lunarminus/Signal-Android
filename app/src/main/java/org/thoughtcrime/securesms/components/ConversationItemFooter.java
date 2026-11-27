@@ -33,6 +33,7 @@ import org.thoughtcrime.securesms.conversation.ConversationItemDisplayMode;
 import org.thoughtcrime.securesms.conversation.v2.computed.FormattedDate;
 import org.thoughtcrime.securesms.database.SignalDatabase;
 import org.thoughtcrime.securesms.database.model.MessageRecord;
+import org.thoughtcrime.securesms.external.ui.ExternalMessageLabels;
 import org.thoughtcrime.securesms.database.model.MmsMessageRecord;
 import org.thoughtcrime.securesms.dependencies.AppDependencies;
 import org.signal.core.ui.permissions.Permissions;
@@ -341,8 +342,9 @@ public class ConversationItemFooter extends ConstraintLayout {
           dateLabelContentDesc = dateLabel;
         }
       }
-      dateView.setText(dateLabel);
-      dateView.setContentDescription(dateLabelContentDesc);
+      // Fork: SMS/MMS messages say so next to their time.
+      dateView.setText(ExternalMessageLabels.withTransportLabel(getContext(), messageRecord, dateLabel));
+      dateView.setContentDescription(ExternalMessageLabels.withTransportLabel(getContext(), messageRecord, dateLabelContentDesc));
     }
   }
 

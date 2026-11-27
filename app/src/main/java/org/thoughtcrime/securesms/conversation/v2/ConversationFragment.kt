@@ -2174,6 +2174,8 @@ class ConversationFragment :
   private fun registerForResults() {
     addToContactsLauncher = registerForActivityResult(AddToContactsContract()) {}
     conversationActivityResultContracts = ConversationActivityResultContracts(this, ActivityResultCallbacks())
+    // Fork: media headed out as MMS is never uploaded to Signal's servers.
+    conversationActivityResultContracts.allowPreUpload = { sendButton.selectedSendType.usesSignalTransport }
   }
 
   private fun observePlaintextExportState() {

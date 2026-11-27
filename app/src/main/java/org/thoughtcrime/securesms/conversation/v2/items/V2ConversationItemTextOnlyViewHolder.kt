@@ -32,6 +32,7 @@ import org.signal.core.ui.util.ViewUtil
 import org.signal.core.util.StringUtil
 import org.signal.core.util.dp
 import org.thoughtcrime.securesms.R
+import org.thoughtcrime.securesms.external.ui.ExternalMessageLabels
 import org.thoughtcrime.securesms.components.mention.MentionAnnotation
 import org.thoughtcrime.securesms.conversation.BodyBubbleLayoutTransition
 import org.thoughtcrime.securesms.conversation.ConversationAdapterBridge
@@ -790,8 +791,9 @@ open class V2ConversationItemTextOnlyViewHolder<Model : MappingModel<Model>>(
         }
       }
 
-      binding.footerDate.text = dateLabel
-      binding.footerDate.contentDescription = dateLabelContentDesc
+      // Fork: SMS/MMS messages say so next to their time.
+      binding.footerDate.text = ExternalMessageLabels.withTransportLabel(getContext(), record, dateLabel)
+      binding.footerDate.contentDescription = ExternalMessageLabels.withTransportLabel(getContext(), record, dateLabelContentDesc)
     }
   }
 

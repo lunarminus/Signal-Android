@@ -96,7 +96,11 @@ class MediaSendFlowActivityContract(private val clazz: Class<out Activity>) : Ac
     /**
      * Send type identifier (app-layer enum ordinal).
      */
-    val sendType: Int = 0
+    val sendType: Int = 0,
+    /**
+     * Fork: false when the media will go out as MMS, so nothing is uploaded to Signal's servers ahead of time.
+     */
+    val allowPreUpload: Boolean = true
   ) : Parcelable {
     companion object {
       fun fromIntent(intent: Intent): Args {

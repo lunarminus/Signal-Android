@@ -1228,7 +1228,7 @@ class MediaSendFlowViewModel(
    * A flow that picks its destination mid-flight has nothing to attribute an upload to yet, so it waits for the send.
    */
   private fun MediaSendFlowState.shouldPreUpload(metered: Boolean): Boolean {
-    return !metered && !isContactSelectionRequired
+    return args.allowPreUpload && !metered && !isContactSelectionRequired
   }
 
   //endregion

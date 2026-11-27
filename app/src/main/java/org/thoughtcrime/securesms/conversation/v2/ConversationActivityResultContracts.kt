@@ -47,6 +47,9 @@ class ConversationActivityResultContracts(private val fragment: Fragment, privat
     private val TAG = Log.tag(ConversationActivityResultContracts::class.java)
   }
 
+  /** Fork: whether media picked now may be uploaded to Signal ahead of sending (not when it'll go out as MMS). */
+  var allowPreUpload: () -> Boolean = { true }
+
   private val contactShareLauncher = fragment.registerForActivityResult(ContactShareEditor) { contacts -> callbacks.onSendContacts(contacts) }
   private val selectContactLauncher = fragment.registerForActivityResult(SelectContact) { contacts -> callbacks.onSendContacts(contacts) }
   private val systemSelectContactLauncher = fragment.registerForActivityResult(SystemSelectContact) { source -> callbacks.onContactSelect(source) }
@@ -83,16 +86,16 @@ class ConversationActivityResultContracts(private val fragment: Fragment, privat
   }
 
   fun launchGallery(recipientId: RecipientId, text: CharSequence?, isReply: Boolean) {
-    mediaGalleryLauncher.launch(MediaSelectionInput(emptyList(), recipientId, text, isReply))
+    mediaGalleryLauncher.launch(MediaSelectionInput(emptyList(), recipientId, text, isReply, allowPreUpload()))
   }
 
   fun launchCamera(recipientId: RecipientId, isReply: Boolean) {
-    cameraLauncher.launch(MediaSelectionInput(emptyList(), recipientId, null, isReply))
+    cameraLauncher.launch(MediaSelectionInput(emptyList(), recipientId, null, isReply, allowPreUpload()))
     fragment.requireActivity().overridePendingTransition(R.anim.camera_slide_from_bottom, R.anim.stationary)
   }
 
   fun launchMediaEditor(mediaList: List<Media>, recipientId: RecipientId, text: CharSequence?) {
-    mediaSelectionLauncher.launch(MediaSelectionInput(mediaList, recipientId, text))
+    mediaSelectionLauncher.launch(MediaSelectionInput(mediaList, recipientId, text, allowPreUpload = allowPreUpload()))
   }
 
   fun launchGifSearch(recipientId: RecipientId, text: CharSequence?) {
@@ -134,8 +137,7 @@ class ConversationActivityResultContracts(private val fragment: Fragment, privat
 
   private object MediaSelection : ActivityResultContract<MediaSelectionInput, MediaSendActivityResult?>() {
     override fun createIntent(context: Context, input: MediaSelectionInput): Intent {
-      val (media, recipientId, text) = input
-      return MediaSendLauncher.editor(context, media, recipientId, text)
+      return MediaSendLauncher.editor(context, input.media, input.recipientId, input.text, input.allowPreUpload)
     }
 
     override fun parseResult(resultCode: Int, intent: Intent?): MediaSendActivityResult? {
@@ -145,8 +147,7 @@ class ConversationActivityResultContracts(private val fragment: Fragment, privat
 
   private object MediaCapture : ActivityResultContract<MediaSelectionInput, MediaSendActivityResult?>() {
     override fun createIntent(context: Context, input: MediaSelectionInput): Intent {
-      val (_, recipientId, _, isReply) = input
-      return MediaSendLauncher.camera(context, recipientId, isReply)
+      return MediaSendLauncher.camera(context, input.recipientId, input.isReply, input.allowPreUpload)
     }
 
     override fun parseResult(resultCode: Int, intent: Intent?): MediaSendActivityResult? {
@@ -156,8 +157,7 @@ class ConversationActivityResultContracts(private val fragment: Fragment, privat
 
   private object MediaGallery : ActivityResultContract<MediaSelectionInput, MediaSendActivityResult?>() {
     override fun createIntent(context: Context, input: MediaSelectionInput): Intent {
-      val (media, recipientId, text, isReply) = input
-      return MediaSendLauncher.gallery(context, media, recipientId, text, isReply)
+      return MediaSendLauncher.gallery(context, input.media, input.recipientId, input.text, input.isReply, input.allowPreUpload)
     }
 
     override fun parseResult(resultCode: Int, intent: Intent?): MediaSendActivityResult? {
@@ -268,7 +268,7 @@ class ConversationActivityResultContracts(private val fragment: Fragment, privat
     }
   }
 
-  private data class MediaSelectionInput(val media: List<Media>, val recipientId: RecipientId, val text: CharSequence?, val isReply: Boolean = false)
+  private data class MediaSelectionInput(val media: List<Media>, val recipientId: RecipientId, val text: CharSequence?, val isReply: Boolean = false, val allowPreUpload: Boolean = true)
 
   private data class GifSearchInput(val recipientId: RecipientId, val text: CharSequence?)
 

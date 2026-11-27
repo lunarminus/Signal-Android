@@ -13,6 +13,10 @@
     <string name="ExternalMessageSendType__cant_send_sms">This message can\'t be sent as SMS/MMS. Check that Signal SMS is your default SMS app.</string>
     <string name="ExternalMessageSendType__view_once_or_scheduled_not_supported">View-once and scheduled media can only be sent over Signal.</string>
     <string name="ExternalMessageSendType__signal_only_attachment">Polls, payments and contact cards can only be sent over Signal. Switch to Signal with a long press on the send button.</string>
+    <string name="ExternalMessage__sms">SMS</string>
+    <string name="ExternalMessage__mms">MMS</string>
+    <!-- Footer of an SMS/MMS message: transport label, then the time. Example: "SMS · 9:41 PM" -->
+    <string name="ExternalMessage__label_and_date">%1$s · %2$s</string>
 
     <!-- Chats settings entry that opens the SMS/MMS settings -->
     <string name="ExternalMessagingSettings__sms_and_mms">SMS and MMS</string>
