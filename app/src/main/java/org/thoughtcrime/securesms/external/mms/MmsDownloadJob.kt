@@ -14,9 +14,11 @@ import org.signal.core.util.logging.Log
 import org.thoughtcrime.securesms.external.mms.pdu.NotificationInd
 import org.thoughtcrime.securesms.external.mms.pdu.PduHeaders
 import org.thoughtcrime.securesms.external.mms.pdu.PduParser
+import org.thoughtcrime.securesms.external.ExternalIncomingMessages
 import org.thoughtcrime.securesms.external.sms.SmsSendJob
 import org.thoughtcrime.securesms.jobmanager.Job
 import org.thoughtcrime.securesms.jobmanager.JsonJobData
+import org.thoughtcrime.securesms.recipients.Recipient
 import org.thoughtcrime.securesms.jobs.BaseJob
 
 /**
@@ -96,6 +98,19 @@ class MmsDownloadJob private constructor(
       val notification = pdu as NotificationInd
       location = notification.contentLocation?.let { String(it, Charsets.UTF_8) }
       transaction = notification.transactionId
+
+      // Don't fetch anything a blocked sender points us at: the download itself tells them we're online.
+      val sender = ExternalIncomingMessages.resolveAddress(notification.from?.string)
+      if (sender != null && Recipient.resolved(sender).isBlocked) {
+        Log.i(TAG, "Ignoring MMS notification from a blocked sender.")
+        return
+      }
+    }
+
+    val scheme = location?.let { Uri.parse(it).scheme?.lowercase() }
+    if (scheme != "http" && scheme != "https") {
+      Log.w(TAG, "MMS notification with an unsupported content location scheme: $scheme")
+      return
     }
 
     if (location.isNullOrEmpty()) {

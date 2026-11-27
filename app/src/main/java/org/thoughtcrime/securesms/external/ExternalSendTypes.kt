@@ -21,7 +21,8 @@ object ExternalSendTypes {
   fun available(context: Context, recipient: Recipient): List<MessageSendType> {
     val types = mutableListOf<MessageSendType>()
 
-    val signalReachable = !recipient.isMmsGroup && recipient.isRegistered && Recipient.self().isRegistered
+    // Anyone not known to be unregistered gets Signal, so an unchecked registration state never downgrades a chat to SMS.
+    val signalReachable = !recipient.isMmsGroup && !recipient.isUnregistered && Recipient.self().isRegistered
     if (signalReachable) {
       types += MessageSendType.SignalMessageSendType
     }

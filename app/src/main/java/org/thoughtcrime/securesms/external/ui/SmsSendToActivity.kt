@@ -50,7 +50,8 @@ class SmsSendToActivity : Activity() {
     val data: Uri? = original.data
     val (address, body) = when {
       data == null -> null to original.getStringExtra(Intent.EXTRA_TEXT)
-      data.scheme == "content" -> queryContactAddress(data) to null
+      data.scheme == "content" && data.authority == ContactsContract.AUTHORITY -> queryContactAddress(data) to null
+      data.scheme == "content" -> null to null
       else -> parseSmsUri(data) to (original.getStringExtra("sms_body") ?: parseBody(data) ?: original.getStringExtra(Intent.EXTRA_TEXT))
     }
 

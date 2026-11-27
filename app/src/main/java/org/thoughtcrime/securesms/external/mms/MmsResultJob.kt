@@ -61,6 +61,9 @@ class MmsResultJob private constructor(
     private const val ACTION_DOWNLOADED = "downloaded"
     private const val MAX_DOWNLOAD_ATTEMPTS = 3
 
+    /** Well above any carrier's MMS limit; anything bigger isn't a real MMS. */
+    private const val MAX_DOWNLOAD_BYTES = 10L * 1024 * 1024
+
     private const val KEY_ACTION = "action"
     private const val KEY_MESSAGE_ID = "message_id"
     private const val KEY_RESULT = "result"
@@ -156,7 +159,10 @@ class MmsResultJob private constructor(
     }
 
     val file = fileUri?.let { MmsFileProvider.fileFor(context, Uri.parse(it)) }
-    val bytes = file?.takeIf { it.exists() }?.readBytes()
+    val bytes = file?.takeIf { it.exists() && it.length() <= MAX_DOWNLOAD_BYTES }?.readBytes()
+    if (file != null && file.exists() && file.length() > MAX_DOWNLOAD_BYTES) {
+      Log.w(TAG, "Downloaded MMS is ${file.length()} bytes, over the $MAX_DOWNLOAD_BYTES byte limit. Dropping it.")
+    }
     file?.delete()
 
     if (bytes == null || bytes.isEmpty()) {

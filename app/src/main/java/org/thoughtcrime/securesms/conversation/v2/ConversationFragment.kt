@@ -5214,6 +5214,12 @@ class ConversationFragment :
       // Fork: SMS/MMS can't use Signal's pre-uploaded attachments, so send the original media instead.
       val sendingExternally = !sendButton.selectedSendType.usesSignalTransport
 
+      // Fork: MMS can't make media disappear or hold it for later, so don't quietly send it as a permanent, immediate message.
+      if (sendingExternally && (result.isViewOnce || result.scheduledTime != -1L)) {
+        toast(R.string.ExternalMessageSendType__view_once_or_scheduled_not_supported)
+        return
+      }
+
       if (result.isPushPreUpload && !sendingExternally) {
         sendPreUploadMediaMessage(result)
         return
