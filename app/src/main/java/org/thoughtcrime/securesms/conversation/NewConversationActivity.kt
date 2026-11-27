@@ -64,6 +64,7 @@ import org.thoughtcrime.securesms.recipients.Recipient
 import org.thoughtcrime.securesms.recipients.ui.RecipientLookupFailureMessage
 import org.thoughtcrime.securesms.recipients.ui.RecipientPicker
 import org.thoughtcrime.securesms.recipients.ui.RecipientPicker.DisplayMode
+import org.thoughtcrime.securesms.external.ExternalMessagingPreferences
 import org.thoughtcrime.securesms.recipients.ui.RecipientPickerCallbacks
 import org.thoughtcrime.securesms.recipients.ui.RecipientSelection
 import org.thoughtcrime.securesms.recipients.ui.findby.FindByActivity
@@ -324,7 +325,12 @@ private fun NewConversationRecipientPicker(
     searchQuery = uiState.searchQuery,
     isRefreshing = uiState.isRefreshingContacts,
     shouldResetContactsList = uiState.shouldResetContactsList,
-    displayModes = setOf(DisplayMode.PUSH, DisplayMode.ACTIVE_GROUPS, DisplayMode.INACTIVE_GROUPS, DisplayMode.SELF),
+    // Fork: also list contacts who aren't on Signal when SMS/MMS is on.
+    displayModes = if (ExternalMessagingPreferences.isEnabled) {
+      setOf(DisplayMode.PUSH, DisplayMode.SMS, DisplayMode.ACTIVE_GROUPS, DisplayMode.INACTIVE_GROUPS, DisplayMode.SELF)
+    } else {
+      setOf(DisplayMode.PUSH, DisplayMode.ACTIVE_GROUPS, DisplayMode.INACTIVE_GROUPS, DisplayMode.SELF)
+    },
     callbacks = remember(callbacks) {
       RecipientPickerCallbacks(
         listActions = callbacks,

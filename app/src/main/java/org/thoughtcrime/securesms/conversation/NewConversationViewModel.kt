@@ -22,7 +22,9 @@ import org.thoughtcrime.securesms.contacts.management.ContactsManagementReposito
 import org.thoughtcrime.securesms.contacts.sync.ContactDiscovery
 import org.thoughtcrime.securesms.conversation.NewConversationUiState.UserMessage.Info
 import org.thoughtcrime.securesms.conversation.NewConversationUiState.UserMessage.Prompt
+import org.thoughtcrime.securesms.database.SignalDatabase
 import org.thoughtcrime.securesms.dependencies.AppDependencies
+import org.thoughtcrime.securesms.external.ExternalMessagingPreferences
 import org.thoughtcrime.securesms.keyvalue.SignalStore
 import org.thoughtcrime.securesms.recipients.PhoneNumber
 import org.thoughtcrime.securesms.recipients.Recipient
@@ -81,12 +83,23 @@ class NewConversationViewModel : ViewModel() {
 
           if (recipient.isRegistered && recipient.hasServiceId) {
             openConversation(recipient.id)
+          } else if (ExternalMessagingPreferences.isEnabled) {
+            // Fork: not on Signal, but we can still text them.
+            openConversation(recipient.id)
           } else {
             Log.d(TAG, "[resolveAndOpenConversation] Lookup successful, but recipient is not registered or has no service ID.")
           }
         }
 
         is RecipientRepository.LookupResult.Failure -> {
+          if (lookupResult is RecipientRepository.PhoneLookupResult.NotFound && ExternalMessagingPreferences.isEnabled) {
+            // Fork: not on Signal, but we can still text them.
+            val recipientId = withContext(Dispatchers.IO) { SignalDatabase.recipients.getOrInsertFromE164(lookupResult.phone.value) }
+            internalUiState.update { it.copy(isLookingUpRecipient = false) }
+            openConversation(recipientId)
+            return@launch
+          }
+
           internalUiState.update {
             it.copy(
               isLookingUpRecipient = false,

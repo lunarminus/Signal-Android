@@ -12,7 +12,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
+import kotlinx.coroutines.withContext
 import org.signal.core.util.UsernameUtil
+import org.thoughtcrime.securesms.database.SignalDatabase
+import org.thoughtcrime.securesms.external.ExternalMessagingPreferences
 import org.thoughtcrime.securesms.profiles.manage.UsernameRepository
 import org.thoughtcrime.securesms.recipients.PhoneNumber
 import org.thoughtcrime.securesms.recipients.Recipient
@@ -81,7 +84,12 @@ class FindByViewModel(
 
     return when (val result = RecipientRepository.lookup(PhoneNumber(e164))) {
       is RecipientRepository.PhoneLookupResult.InvalidPhone -> FindByResult.InvalidEntry
-      is RecipientRepository.PhoneLookupResult.NotFound -> FindByResult.NotFound()
+      // Fork: someone who isn't on Signal can still be texted when SMS/MMS is on.
+      is RecipientRepository.PhoneLookupResult.NotFound -> if (ExternalMessagingPreferences.isEnabled) {
+        FindByResult.Success(withContext(Dispatchers.IO) { SignalDatabase.recipients.getOrInsertFromE164(e164) })
+      } else {
+        FindByResult.NotFound()
+      }
       is RecipientRepository.PhoneLookupResult.Found -> FindByResult.Success(result.recipient.id)
       is RecipientRepository.LookupResult.NetworkError -> FindByResult.NetworkError
     }
