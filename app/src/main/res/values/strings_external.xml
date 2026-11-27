@@ -10,7 +10,7 @@
     <!-- Transport picker entry for scheduling a Signal message -->
     <string name="ExternalMessageSendType__schedule_message">Schedule message</string>
     <!-- Toast when a carrier message can't be sent, e.g. not the default SMS app or no SIM -->
-    <string name="ExternalMessageSendType__cant_send_sms">This message can\'t be sent as SMS/MMS. Check that Signal SMS is your default SMS app.</string>
+    <string name="ExternalMessageSendType__cant_send_sms">This message can\'t be sent as SMS/MMS. Check that Switchboard is your default SMS app.</string>
     <string name="ExternalMessageSendType__view_once_or_scheduled_not_supported">View-once and scheduled media can only be sent over Signal.</string>
     <string name="ExternalMessageSendType__signal_only_attachment">Polls, payments and contact cards can only be sent over Signal. Switch to Signal with a long press on the send button.</string>
     <string name="ExternalMessage__sms">SMS</string>
@@ -27,9 +27,9 @@
     <!-- Summary for the master switch -->
     <string name="ExternalMessagingSettings__use_sms_and_mms_summary">Text contacts who aren\'t on Signal from the same inbox. SMS and MMS are not end-to-end encrypted.</string>
     <!-- Row that asks Android to make this app the default SMS app -->
-    <string name="ExternalMessagingSettings__make_default">Make Signal SMS your default SMS app</string>
+    <string name="ExternalMessagingSettings__make_default">Make Switchboard your default SMS app</string>
     <!-- Summary when this app is already the default SMS app -->
-    <string name="ExternalMessagingSettings__is_default">Signal SMS is your default SMS app</string>
+    <string name="ExternalMessagingSettings__is_default">Switchboard is your default SMS app</string>
     <!-- Summary when another app is the default SMS app -->
     <string name="ExternalMessagingSettings__not_default">Needed to receive SMS reliably and to send and receive MMS</string>
     <!-- Toggle: ask the carrier for delivery reports -->
@@ -45,9 +45,9 @@
     <!-- Summary for the prefer-Signal toggle -->
     <string name="ExternalMessagingSettings__prefer_signal_summary">Use Signal for contacts who are on Signal. Long-press the send button to switch.</string>
     <!-- Toast when SMS permissions were denied -->
-    <string name="ExternalMessagingSettings__permissions_needed">Signal SMS needs SMS permissions to send and receive texts.</string>
+    <string name="ExternalMessagingSettings__permissions_needed">Switchboard needs SMS permissions to send and receive texts.</string>
     <string name="ExternalMessagingSettings__import">Import texts from your phone</string>
-    <string name="ExternalMessagingSettings__import_summary">Bring the texts already on your phone into Signal SMS</string>
+    <string name="ExternalMessagingSettings__import_summary">Bring the texts already on your phone into Switchboard</string>
     <string name="ExternalMessagingSettings__import_running">Importing your texts…</string>
     <string name="ExternalMessagingSettings__import_done">%1$d texts imported. Tap to check for new ones.</string>
     <string name="ExternalMessagingSettings__import_started">Importing your texts. They\'ll appear in your chats as they\'re copied.</string>
