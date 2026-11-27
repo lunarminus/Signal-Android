@@ -12,6 +12,7 @@ import org.thoughtcrime.securesms.contacts.paged.collections.ContactSearchIterat
 import org.thoughtcrime.securesms.contacts.paged.collections.CursorSearchIterator
 import org.thoughtcrime.securesms.contacts.paged.collections.StoriesSearchCollection
 import org.thoughtcrime.securesms.database.RecipientTable
+import org.thoughtcrime.securesms.external.ExternalMessagingPreferences
 import org.thoughtcrime.securesms.database.model.DistributionListPrivacyMode
 import org.thoughtcrime.securesms.database.model.GroupRecord
 import org.thoughtcrime.securesms.database.model.ThreadWithRecipient
@@ -240,7 +241,9 @@ class ContactSearchPagedDataSource(
   }
 
   private fun getNonGroupSearchIterator(section: ContactSearchConfiguration.Section.Individuals, query: String?): ContactSearchIterator<Cursor> {
-    val searchQuery = RecipientTable.ContactSearchQuery(query ?: "", section.includeSelfMode, section.pushSearchResultsSortOrder)
+    // Fork: list contacts who aren't on Signal too when the section asks for them and SMS/MMS is on.
+    val includeNonSignal = section.transportType != ContactSearchConfiguration.TransportType.PUSH && ExternalMessagingPreferences.isEnabled
+    val searchQuery = RecipientTable.ContactSearchQuery(query ?: "", section.includeSelfMode, section.pushSearchResultsSortOrder, includeNonSignal)
     return CursorSearchIterator(wrapRecipientCursor(contactSearchPagedDataSourceRepository.querySignalContacts(searchQuery)))
   }
 

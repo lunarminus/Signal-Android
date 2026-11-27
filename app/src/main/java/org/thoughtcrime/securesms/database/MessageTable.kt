@@ -2391,6 +2391,17 @@ open class MessageTable(context: Context?, databaseHelper: SignalDatabase) : Dat
   }
 
   /** Fork: marks a message sent over an external transport (SMS/MMS) as sent, without the secure/push bits. */
+  /** Fork: the subset of [messageIds] that didn't come over Signal (SMS/MMS), which must never get Signal receipts. */
+  fun getInsecureMessageIds(messageIds: Collection<Long>): Set<Long> {
+    return SqlUtil.buildCollectionQuery(ID, messageIds).flatMap { query ->
+      readableDatabase.select(ID)
+        .from(TABLE_NAME)
+        .where("(${query.where}) AND ($TYPE & ${MessageTypes.SECURE_MESSAGE_BIT}) = 0", query.whereArgs)
+        .run()
+        .readToList { it.requireLong(ID) }
+    }.toSet()
+  }
+
   fun markExternalAsSent(messageId: Long) {
     val threadId = getThreadIdForMessage(messageId)
     updateMailboxBitmask(messageId, MessageTypes.BASE_TYPE_MASK or MessageTypes.PUSH_MESSAGE_BIT or MessageTypes.SECURE_MESSAGE_BIT, MessageTypes.BASE_SENT_TYPE, Optional.of(threadId))

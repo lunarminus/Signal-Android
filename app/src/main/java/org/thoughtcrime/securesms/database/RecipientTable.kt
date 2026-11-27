@@ -3908,6 +3908,7 @@ open class RecipientTable(context: Context, databaseHelper: SignalDatabase) : Da
 
     val searchSelection = ContactSearchSelection.Builder()
       .withRegistered(true)
+      .withNonRegistered(contactSearchQuery.includeNonSignal)
       .withGroups(false)
       .withVerified(true)
       .excludeId(if (contactSearchQuery.includeSelfMode.includeSelf) null else Recipient.self().id)
@@ -5248,7 +5249,9 @@ open class RecipientTable(context: Context, databaseHelper: SignalDatabase) : Da
   data class ContactSearchQuery(
     val query: String,
     val includeSelfMode: IncludeSelfMode,
-    val contactSearchSortOrder: ContactSearchSortOrder = ContactSearchSortOrder.NATURAL
+    val contactSearchSortOrder: ContactSearchSortOrder = ContactSearchSortOrder.NATURAL,
+    /** Fork: also include system contacts who aren't on Signal, for SMS/MMS. */
+    val includeNonSignal: Boolean = false
   )
 
   sealed interface IncludeSelfMode {

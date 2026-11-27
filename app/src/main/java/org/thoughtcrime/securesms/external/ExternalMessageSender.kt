@@ -83,6 +83,20 @@ object ExternalMessageSender {
     return true
   }
 
+  /**
+   * Sends an already-built [message] over the best external transport, for flows (like sharing) that
+   * build their own messages. Returns false if no transport can take it.
+   */
+  @JvmStatic
+  @JvmOverloads
+  @WorkerThread
+  fun send(context: Context, message: OutgoingMessage, threadId: Long, subscriptionId: Int = -1): Boolean {
+    val withSim = if (subscriptionId != -1) message.copy(subscriptionId = subscriptionId) else message
+    val transport = ExternalTransports.select(context, withSim.threadRecipient, withSim) ?: return false
+    MessageSender.send(context, prepare(withSim, transport), threadId, transport.type.toSendType(), null, null)
+    return true
+  }
+
   /** Marks [messageId] failed and shows the usual "message not delivered" notification. */
   @JvmStatic
   @WorkerThread

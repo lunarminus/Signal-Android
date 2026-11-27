@@ -58,6 +58,9 @@ import org.thoughtcrime.securesms.recipients.ui.RecipientPicker
 import org.thoughtcrime.securesms.recipients.ui.RecipientPickerCallbacks
 import org.thoughtcrime.securesms.recipients.ui.RecipientSelection
 import org.thoughtcrime.securesms.recipients.ui.findby.FindByActivity
+import org.thoughtcrime.securesms.conversation.ConversationIntents
+import org.thoughtcrime.securesms.external.ExternalMessagingPreferences
+import kotlinx.coroutines.rx3.await
 import org.thoughtcrime.securesms.recipients.ui.findby.FindByMode
 import java.text.NumberFormat
 
@@ -132,6 +135,13 @@ private fun CreateGroupScreen(
       is NavTarget.AddGroupDetails -> {
         addDetailsLauncher.launch(AddGroupDetailsActivity.newIntent(context, pendingDestination.recipientIds))
         callbacks.onPendingDestinationConsumed()
+      }
+
+      is NavTarget.OpenConversation -> {
+        val intent = ConversationIntents.createBuilder(context, pendingDestination.recipientId, -1L).await().build()
+        callbacks.onPendingDestinationConsumed()
+        context.startActivity(intent)
+        closeScreen(Activity.RESULT_OK)
       }
 
       null -> Unit
@@ -220,7 +230,8 @@ private fun CreateGroupRecipientPicker(
 ) {
   RecipientPicker(
     searchQuery = uiState.searchQuery,
-    displayModes = setOf(RecipientPicker.DisplayMode.PUSH),
+    // Fork: people who aren't on Signal can be added to a group text (MMS).
+    displayModes = if (ExternalMessagingPreferences.isEnabled) setOf(RecipientPicker.DisplayMode.PUSH, RecipientPicker.DisplayMode.SMS) else setOf(RecipientPicker.DisplayMode.PUSH),
     selectionLimits = uiState.selectionLimits,
     pendingRecipientSelections = uiState.pendingRecipientSelections,
     isRefreshing = false,

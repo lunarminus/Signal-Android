@@ -142,6 +142,7 @@ public final class MenuState {
     boolean canUnpinMessage  = false;
     boolean canStarMessage   = false;
     boolean canUnstarMessage = false;
+    boolean hasExternal      = false;
 
     for (MultiselectPart part : selectedParts) {
       MessageRecord messageRecord = part.getMessageRecord();
@@ -180,6 +181,11 @@ public final class MenuState {
         hasGift = true;
       }
 
+      // Fork: SMS/MMS messages can't carry reactions or pins, which only travel over Signal.
+      if (!isActionMessage(messageRecord) && !messageRecord.isSecure()) {
+        hasExternal = true;
+      }
+
       if (messageRecord.isPaymentNotification() || messageRecord.isPaymentTombstone()) {
         hasPayment = true;
       }
@@ -192,7 +198,7 @@ public final class MenuState {
         hasPollTerminate = true;
       }
 
-      if (!messageRecord.isPending() && messageRecord.getPinnedUntil() == 0 && !conversationRecipient.isReleaseNotes() && canEditGroupInfo && !hasGift && !conversationRecipient.isInactiveGroup()) {
+      if (!messageRecord.isPending() && messageRecord.getPinnedUntil() == 0 && !conversationRecipient.isReleaseNotes() && canEditGroupInfo && !hasGift && !hasExternal && !conversationRecipient.isInactiveGroup()) {
         canPinMessage = true;
       }
 
@@ -267,7 +273,7 @@ public final class MenuState {
 
     return builder.shouldShowCopyAction(!actionMessage && !remoteDelete && hasText && !hasGift && !hasPayment && !hasPoll)
                   .shouldShowDeleteAction(!hasInMemory && onlyContainsCompleteMessages(selectedParts))
-                  .shouldShowReactions(!conversationRecipient.isReleaseNotes() && !conversationRecipient.isInactiveGroup())
+                  .shouldShowReactions(!conversationRecipient.isReleaseNotes() && !conversationRecipient.isInactiveGroup() && !hasExternal)
                   .shouldShowPaymentDetails(hasPayment && SignalStore.account().isPrimaryDevice())
                   .shouldShowPollTerminate(hasPollTerminate)
                   .shouldShowPinMessage(canPinMessage)

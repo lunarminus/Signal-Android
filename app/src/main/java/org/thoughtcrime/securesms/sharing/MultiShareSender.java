@@ -19,6 +19,8 @@ import org.thoughtcrime.securesms.attachments.UriAttachment;
 import org.thoughtcrime.securesms.contacts.paged.ContactSearchKey;
 import org.thoughtcrime.securesms.contactshare.Contact;
 import org.thoughtcrime.securesms.conversation.MessageSendType;
+import org.thoughtcrime.securesms.external.ExternalMessageSender;
+import org.thoughtcrime.securesms.external.ExternalSendTypes;
 import org.thoughtcrime.securesms.conversation.colors.ChatColors;
 import org.thoughtcrime.securesms.database.SignalDatabase;
 import org.thoughtcrime.securesms.database.model.Mention;
@@ -106,7 +108,8 @@ public final class MultiShareSender {
 
       long            threadId           = SignalDatabase.threads().getOrCreateThreadIdFor(recipient);
       List<Mention>   mentions           = getValidMentionsForRecipient(recipient, multiShareArgs.getMentions());
-      MessageSendType sendType           = MessageSendType.SignalMessageSendType.INSTANCE;
+      boolean         sendExternally     = !recipientSearchKey.isStory() && shouldSendExternally(context, recipient);
+      MessageSendType sendType           = sendExternally ? ExternalSendTypes.defaultFor(context, recipient) : MessageSendType.SignalMessageSendType.INSTANCE;
       long            expiresIn          = TimeUnit.SECONDS.toMillis(recipient.getExpiresInSeconds());
       int             expireTimerVersion = recipient.getExpireTimerVersion();
       List<Contact>   contacts           = multiShareArgs.getSharedContacts();
@@ -127,8 +130,11 @@ public final class MultiShareSender {
       MultiShareTimestampProvider sentTimestamp      = recipient.isDistributionList() ? distributionListSentTimestamps : MultiShareTimestampProvider.create();
       boolean                     canSendAsTextStory = recipientSearchKey.isStory() && multiShareArgs.isValidForTextStoryGeneration();
 
-      if ((recipient.isMmsGroup() || recipient.getEmail().isPresent())) {
+      if ((recipient.isMmsGroup() || recipient.getEmail().isPresent()) && !sendExternally) {
         results.add(new MultiShareSendResult(recipientSearchKey, MultiShareSendResult.Type.MMS_NOT_ENABLED));
+      } else if (sendExternally && multiShareArgs.isViewOnce()) {
+        // Fork: MMS can't make media disappear, so don't send view-once media as a permanent message.
+        results.add(new MultiShareSendResult(recipientSearchKey, MultiShareSendResult.Type.GENERIC_ERROR));
       } else if (hasPushMedia || canSendAsTextStory) {
         sendMediaMessageOrCollectStoryToBatch(context,
                                               multiShareArgs,
@@ -292,13 +298,16 @@ public final class MultiShareSender {
 
     if (isStory) {
       storiesToBatchSend.addAll(outgoingMessages);
-    } else if (shouldSendAsPush(recipient)) {
+    } else if (!shouldSendExternally(context, recipient)) {
       for (final OutgoingMessage outgoingMessage : outgoingMessages) {
         MessageSender.send(context, outgoingMessage.makeSecure(), threadId, SendType.SIGNAL, null, null);
       }
     } else {
+      // Fork: people who aren't on Signal get the share over SMS/MMS.
       for (final OutgoingMessage outgoingMessage : outgoingMessages) {
-        MessageSender.send(context, outgoingMessage, threadId, SendType.MMS, null, null);
+        if (!ExternalMessageSender.send(context, outgoingMessage, threadId)) {
+          Log.w(TAG, "Could not share to " + recipient.getId() + " over SMS/MMS.");
+        }
       }
     }
   }
@@ -353,13 +362,15 @@ public final class MultiShareSender {
   {
     String body = multiShareArgs.getDraftText() == null ? "" : multiShareArgs.getDraftText();
 
-    OutgoingMessage outgoingMessage;
-    if (shouldSendAsPush(recipient)) {
-      outgoingMessage = OutgoingMessage.text(recipient, body, expiresIn, System.currentTimeMillis(), multiShareArgs.getBodyRanges());
-    } else {
-      outgoingMessage = OutgoingMessage.sms(recipient, body);
+    if (shouldSendExternally(context, recipient)) {
+      // Fork: people who aren't on Signal get the share as an SMS.
+      if (!ExternalMessageSender.send(context, OutgoingMessage.sms(recipient, body), threadId)) {
+        Log.w(TAG, "Could not share text to " + recipient.getId() + " over SMS.");
+      }
+      return;
     }
 
+    OutgoingMessage outgoingMessage = OutgoingMessage.text(recipient, body, expiresIn, System.currentTimeMillis(), multiShareArgs.getBodyRanges());
     MessageSender.send(context, outgoingMessage, threadId, SendType.SIGNAL, null, null);
   }
 
@@ -406,10 +417,12 @@ public final class MultiShareSender {
     return trimmed.replace(linkPreview.getUrl(), "").trim();
   }
 
-  private static boolean shouldSendAsPush(@NonNull Recipient recipient) {
-    return recipient.isDistributionList() ||
-           recipient.isServiceIdOnly() ||
-           recipient.isRegistered();
+  /** Fork: whether a share to [recipient] should go over SMS/MMS, using the same default a chat would. */
+  private static boolean shouldSendExternally(@NonNull Context context, @NonNull Recipient recipient) {
+    if (recipient.isDistributionList() || recipient.isServiceIdOnly()) {
+      return false;
+    }
+    return !ExternalSendTypes.defaultFor(context, recipient).usesSignalTransport();
   }
 
   private static @NonNull SlideDeck buildSlideDeck(@NonNull Context context, @NonNull MultiShareArgs multiShareArgs) throws SlideNotFoundException {

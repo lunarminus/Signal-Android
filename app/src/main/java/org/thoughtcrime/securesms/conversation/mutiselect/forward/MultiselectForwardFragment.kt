@@ -66,6 +66,7 @@ import org.thoughtcrime.securesms.contacts.paged.ContactSearchRepository
 import org.thoughtcrime.securesms.contacts.paged.ContactSearchState
 import org.thoughtcrime.securesms.contacts.paged.ContactSearchViewModel
 import org.thoughtcrime.securesms.database.RecipientTable
+import org.thoughtcrime.securesms.external.ExternalMessagingPreferences
 import org.thoughtcrime.securesms.database.model.IdentityRecord
 import org.thoughtcrime.securesms.keyvalue.SignalStore
 import org.thoughtcrime.securesms.mediasend.v2.stories.ChooseGroupStoryBottomSheet
@@ -509,7 +510,8 @@ class MultiselectForwardFragment :
         addSection(
           ContactSearchConfiguration.Section.Individuals(
             includeHeader = true,
-            transportType = ContactSearchConfiguration.TransportType.PUSH,
+            // Fork: people who aren't on Signal can be shared with over SMS/MMS.
+            transportType = if (ExternalMessagingPreferences.isEnabled) ContactSearchConfiguration.TransportType.ALL else ContactSearchConfiguration.TransportType.PUSH,
             includeSelfMode = RecipientTable.IncludeSelfMode.IncludeWithRemap(getString(R.string.note_to_self))
           )
         )

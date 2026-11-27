@@ -12,6 +12,7 @@
     <!-- Toast when a carrier message can't be sent, e.g. not the default SMS app or no SIM -->
     <string name="ExternalMessageSendType__cant_send_sms">This message can\'t be sent as SMS/MMS. Check that Signal SMS is your default SMS app.</string>
     <string name="ExternalMessageSendType__view_once_or_scheduled_not_supported">View-once and scheduled media can only be sent over Signal.</string>
+    <string name="ExternalMessageSendType__signal_only_attachment">Polls, payments and contact cards can only be sent over Signal. Switch to Signal with a long press on the send button.</string>
 
     <!-- Chats settings entry that opens the SMS/MMS settings -->
     <string name="ExternalMessagingSettings__sms_and_mms">SMS and MMS</string>

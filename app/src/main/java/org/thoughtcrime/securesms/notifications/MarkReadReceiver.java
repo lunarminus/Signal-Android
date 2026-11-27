@@ -7,6 +7,7 @@ import android.content.Intent;
 
 import androidx.annotation.NonNull;
 
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.signal.core.models.recipients.RecipientId;
@@ -100,7 +101,13 @@ public class MarkReadReceiver extends BroadcastReceiver {
         RecipientId             recipientId = entry.getKey();
         List<MarkedMessageInfo> infos       = entry.getValue();
 
-        SendReadReceiptJob.enqueue(threadId, recipientId, infos);
+        // Fork: SMS/MMS senders never get a Signal read receipt, even if they happen to be on Signal.
+        Set<Long> insecure = SignalDatabase.messages().getInsecureMessageIds(infos.stream().map(info -> info.getMessageId().getId()).collect(Collectors.toList()));
+        infos = infos.stream().filter(info -> !insecure.contains(info.getMessageId().getId())).collect(Collectors.toList());
+
+        if (!infos.isEmpty()) {
+          SendReadReceiptJob.enqueue(threadId, recipientId, infos);
+        }
       });
     });
   }

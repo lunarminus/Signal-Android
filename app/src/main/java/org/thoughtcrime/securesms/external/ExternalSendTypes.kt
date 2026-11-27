@@ -43,6 +43,12 @@ object ExternalSendTypes {
     return types
   }
 
+  /** The send type a message to [recipient] should use when the user hasn't picked one (notification replies, shares). */
+  @JvmStatic
+  fun defaultFor(context: Context, recipient: Recipient): MessageSendType {
+    return default(available(context, recipient))
+  }
+
   /** The send type to start a conversation with, chosen from [available]. */
   @JvmStatic
   fun default(available: List<MessageSendType>): MessageSendType {

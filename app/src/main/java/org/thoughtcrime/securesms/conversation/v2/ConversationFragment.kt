@@ -5800,6 +5800,14 @@ class ConversationFragment :
       val button: AttachmentKeyboardButton? = result.getSerializable(AttachmentKeyboardFragment.BUTTON_RESULT) as? AttachmentKeyboardButton
       val media: Media? = result.getParcelable(AttachmentKeyboardFragment.MEDIA_RESULT)
 
+      // Fork: polls, payments and contact cards only exist on Signal.
+      val signalOnly = button == AttachmentKeyboardButton.POLL || button == AttachmentKeyboardButton.PAYMENT || button == AttachmentKeyboardButton.CONTACT
+      if (signalOnly && !sendButton.selectedSendType.usesSignalTransport) {
+        toast(R.string.ExternalMessageSendType__signal_only_attachment)
+        container.hideInput()
+        return
+      }
+
       if (button != null) {
         when (button) {
           AttachmentKeyboardButton.GALLERY -> conversationActivityResultContracts.launchGallery(recipient.id, composeText.textTrimmed, inputPanel.quote.isPresent)

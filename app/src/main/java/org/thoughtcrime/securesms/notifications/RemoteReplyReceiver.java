@@ -30,6 +30,9 @@ import org.signal.core.util.concurrent.SignalExecutors;
 import org.signal.core.util.logging.Log;
 import org.thoughtcrime.securesms.database.MessageTable.MarkedMessageInfo;
 import org.thoughtcrime.securesms.database.SignalDatabase;
+import org.thoughtcrime.securesms.conversation.MessageSendType;
+import org.thoughtcrime.securesms.external.ExternalMessageSender;
+import org.thoughtcrime.securesms.external.ExternalSendTypes;
 import org.thoughtcrime.securesms.database.model.ParentStoryId;
 import org.thoughtcrime.securesms.dependencies.AppDependencies;
 import org.thoughtcrime.securesms.mms.OutgoingMessage;
@@ -90,7 +93,16 @@ public class RemoteReplyReceiver extends BroadcastReceiver {
             slideDeck.addSlide(splitMessage.getTextSlide().get());
           }
 
-          switch (replyMethod) {
+          // Fork: reply the way the chat would send by default, which is SMS/MMS for people who aren't on Signal.
+          MessageSendType defaultSendType = parentStoryId == null ? ExternalSendTypes.defaultFor(context, recipient) : MessageSendType.SignalMessageSendType.INSTANCE;
+
+          if (!defaultSendType.usesSignalTransport()) {
+            threadId = SignalDatabase.threads().getOrCreateThreadIdFor(recipient);
+            int subscriptionId = defaultSendType instanceof MessageSendType.ExternalMessageSendType ? ((MessageSendType.ExternalMessageSendType) defaultSendType).getSimSubscriptionId() : -1;
+            if (!ExternalMessageSender.send(context, OutgoingMessage.sms(recipient, body), threadId, subscriptionId)) {
+              Log.w(TAG, "Could not send the reply over SMS/MMS.");
+            }
+          } else switch (replyMethod) {
             case SecureMessage:
             case GroupMessage: {
               OutgoingMessage reply = OutgoingMessage.quickReply(recipient,

@@ -11,15 +11,20 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.signal.core.models.recipients.RecipientId
 import org.signal.core.util.logging.Log
 import org.signal.remoteconfig.RemoteConfig
 import org.signal.remoteconfig.SelectionLimits
 import org.thoughtcrime.securesms.contacts.SelectedContact
+import org.thoughtcrime.securesms.database.SignalDatabase
+import org.thoughtcrime.securesms.external.ExternalMessagingPreferences
 import org.thoughtcrime.securesms.groups.ui.creategroup.CreateGroupUiState.NavTarget
 import org.thoughtcrime.securesms.groups.ui.creategroup.CreateGroupUiState.UserMessage
 import org.thoughtcrime.securesms.recipients.PhoneNumber
+import org.thoughtcrime.securesms.recipients.Recipient
 import org.thoughtcrime.securesms.recipients.RecipientRepository
 import org.thoughtcrime.securesms.recipients.ui.RecipientSelection
 
@@ -45,6 +50,12 @@ class CreateGroupViewModel : ViewModel() {
 
     return when (val lookupResult = RecipientRepository.lookup(phone)) {
       is RecipientRepository.PhoneLookupResult.Found -> {
+        internalUiState.update { it.copy(isLookingUpRecipient = false) }
+        true
+      }
+
+      // Fork: someone who isn't on Signal can still join a group text (MMS).
+      is RecipientRepository.PhoneLookupResult.NotFound if ExternalMessagingPreferences.isEnabled -> {
         internalUiState.update { it.copy(isLookingUpRecipient = false) }
         true
       }
@@ -97,6 +108,20 @@ class CreateGroupViewModel : ViewModel() {
           }
         }
 
+        // Fork: when some people aren't on Signal, make a group text (MMS) instead of a Signal group.
+        is RecipientRepository.IdLookupResult.FoundSome if ExternalMessagingPreferences.isEnabled -> {
+          val groupRecipientId = withContext(Dispatchers.IO) {
+            val groupId = SignalDatabase.groups.getOrCreateMmsGroupForMembers(selectedRecipientIds + Recipient.self().id)
+            SignalDatabase.recipients.getOrInsertFromGroupId(groupId)
+          }
+          internalUiState.update {
+            it.copy(
+              isLookingUpRecipient = false,
+              pendingDestination = NavTarget.OpenConversation(recipientId = groupRecipientId)
+            )
+          }
+        }
+
         is RecipientRepository.LookupResult.Failure -> {
           internalUiState.update {
             it.copy(
@@ -133,5 +158,6 @@ data class CreateGroupUiState(
 
   sealed interface NavTarget {
     data class AddGroupDetails(val recipientIds: List<RecipientId>) : NavTarget
+    data class OpenConversation(val recipientId: RecipientId) : NavTarget
   }
 }
