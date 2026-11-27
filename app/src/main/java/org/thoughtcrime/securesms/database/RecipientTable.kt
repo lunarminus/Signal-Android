@@ -5246,7 +5246,7 @@ open class RecipientTable(context: Context, databaseHelper: SignalDatabase) : Da
 
   private class GetOrInsertResult(val recipientId: RecipientId, val neededInsert: Boolean)
 
-  data class ContactSearchQuery(
+  data class ContactSearchQuery @JvmOverloads constructor(
     val query: String,
     val includeSelfMode: IncludeSelfMode,
     val contactSearchSortOrder: ContactSearchSortOrder = ContactSearchSortOrder.NATURAL,
