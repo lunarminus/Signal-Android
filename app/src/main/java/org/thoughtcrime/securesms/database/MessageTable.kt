@@ -2390,6 +2390,31 @@ open class MessageTable(context: Context?, databaseHelper: SignalDatabase) : Dat
     AppDependencies.databaseObserver.notifyConversationListListeners()
   }
 
+  /** Fork: marks a message sent over an external transport (SMS/MMS) as sent, without the secure/push bits. */
+  fun markExternalAsSent(messageId: Long) {
+    val threadId = getThreadIdForMessage(messageId)
+    updateMailboxBitmask(messageId, MessageTypes.BASE_TYPE_MASK or MessageTypes.PUSH_MESSAGE_BIT or MessageTypes.SECURE_MESSAGE_BIT, MessageTypes.BASE_SENT_TYPE, Optional.of(threadId))
+    AppDependencies.databaseObserver.notifyMessageUpdateObservers(MessageId(messageId))
+    AppDependencies.databaseObserver.notifyConversationListListeners()
+  }
+
+  /** Fork: records a carrier delivery report for a message sent over an external transport. */
+  fun markExternalAsDelivered(messageId: Long, deliveredTimestamp: Long) {
+    writableDatabase
+      .update(TABLE_NAME)
+      .values(
+        HAS_DELIVERY_RECEIPT to 1,
+        RECEIPT_TIMESTAMP to deliveredTimestamp
+      )
+      .where("$ID = ?", messageId)
+      .run()
+
+    val threadId = getThreadIdForMessage(messageId)
+    threads.updateReceiptStatus(messageId, threadId)
+    AppDependencies.databaseObserver.notifyMessageUpdateObservers(MessageId(messageId))
+    AppDependencies.databaseObserver.notifyConversationListListeners()
+  }
+
   fun markAsSent(messageId: Long, sealedSender: Boolean) {
     val maskOff = MessageTypes.BASE_TYPE_MASK
     val maskOn = MessageTypes.BASE_SENT_TYPE or MessageTypes.PUSH_MESSAGE_BIT or MessageTypes.SECURE_MESSAGE_BIT
@@ -6509,7 +6534,8 @@ open class MessageTable(context: Context?, databaseHelper: SignalDatabase) : Dat
    */
   @Throws(MmsException::class)
   private fun IncomingMessage.toMessageType(): Long {
-    var type = MessageTypes.SECURE_MESSAGE_BIT or MessageTypes.PUSH_MESSAGE_BIT
+    // Fork: messages that arrived over an external transport (SMS/MMS/...) are stored without the secure/push bits.
+    var type = if (this.messageExtras?.externalTransport.isNullOrEmpty()) MessageTypes.SECURE_MESSAGE_BIT or MessageTypes.PUSH_MESSAGE_BIT else 0L
 
     if (this.giftBadge != null) {
       type = type or MessageTypes.SPECIAL_TYPE_GIFT_BADGE

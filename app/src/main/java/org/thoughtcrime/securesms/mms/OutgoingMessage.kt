@@ -60,7 +60,9 @@ data class OutgoingMessage(
   val isUnblocked: Boolean = false,
   val poll: Poll? = null,
   val messageExtras: MessageExtras? = null,
-  val isSelfGroupAdd: Boolean = false
+  val isSelfGroupAdd: Boolean = false,
+  /** Fork: SIM subscription to send an external (SMS/MMS) message from, or -1 for the system default. */
+  val subscriptionId: Int = -1
 ) {
 
   val isV2Group: Boolean = messageGroupContext != null && GroupV2UpdateMessageUtil.isGroupV2(messageGroupContext)
@@ -150,8 +152,6 @@ data class OutgoingMessage(
     bodyRanges = bodyRanges,
     sharedContacts = contacts
   )
-
-  val subscriptionId = -1
 
   fun withExpiry(expiresIn: Long, expireTimerVersion: Int): OutgoingMessage {
     return copy(expiresIn = expiresIn, expireTimerVersion = expireTimerVersion)

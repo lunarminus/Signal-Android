@@ -73,6 +73,14 @@
     <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS" />
     <uses-permission android:name="com.android.launcher.permission.INSTALL_SHORTCUT" />
 
+    <!-- Fork: SMS/MMS (external transports) -->
+    <uses-permission android:name="android.permission.SEND_SMS" />
+    <uses-permission android:name="android.permission.RECEIVE_SMS" />
+    <uses-permission android:name="android.permission.READ_SMS" />
+    <uses-permission android:name="android.permission.RECEIVE_MMS" />
+    <uses-permission android:name="android.permission.RECEIVE_WAP_PUSH" />
+    <uses-permission android:name="android.permission.WRITE_SMS" tools:ignore="ProtectedPermissions" />
+
     <queries>
         <!-- For checking whether Play Store is enabled. -->
         <package android:name="com.android.vending" />
@@ -183,7 +191,6 @@
             android:theme="@style/Theme.Signal.DayNight.NoActionBar"
             android:windowSoftInputMode="stateHidden">
             <intent-filter>
-                <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />
 
                 <data android:mimeType="audio/*" />
@@ -712,6 +719,81 @@
             android:configChanges="touchscreen|keyboard|keyboardHidden|orientation|screenLayout|screenSize"
             android:exported="false"
             android:theme="@style/TextSecure.DialogActivity" />
+
+        <!-- Fork: external (SMS/MMS) transport components. These four are what Android requires of a default SMS app. -->
+        <activity
+            android:name=".external.ui.SmsSendToActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:theme="@style/NoAnimation.Theme.BlackScreen">
+            <intent-filter>
+                <action android:name="android.intent.action.SENDTO" />
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="sms" />
+                <data android:scheme="smsto" />
+                <data android:scheme="mms" />
+                <data android:scheme="mmsto" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".external.ui.ExternalMessagingSettingsActivity"
+            android:exported="false"
+            android:theme="@style/Signal.DayNight.NoActionBar" />
+
+        <service
+            android:name=".external.sms.HeadlessSmsSendService"
+            android:exported="true"
+            android:permission="android.permission.SEND_RESPOND_VIA_MESSAGE">
+            <intent-filter>
+                <action android:name="android.intent.action.RESPOND_VIA_MESSAGE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="sms" />
+                <data android:scheme="smsto" />
+                <data android:scheme="mms" />
+                <data android:scheme="mmsto" />
+            </intent-filter>
+        </service>
+
+        <receiver
+            android:name=".external.sms.SmsDeliverReceiver"
+            android:enabled="true"
+            android:exported="true"
+            android:permission="android.permission.BROADCAST_SMS">
+            <intent-filter>
+                <action android:name="android.provider.Telephony.SMS_DELIVER" />
+            </intent-filter>
+            <intent-filter android:priority="1001">
+                <action android:name="android.provider.Telephony.SMS_RECEIVED" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name=".external.mms.MmsDeliverReceiver"
+            android:enabled="true"
+            android:exported="true"
+            android:permission="android.permission.BROADCAST_WAP_PUSH">
+            <intent-filter>
+                <action android:name="android.provider.Telephony.WAP_PUSH_DELIVER" />
+                <data android:mimeType="application/vnd.wap.mms-message" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name=".external.sms.SmsStatusReceiver"
+            android:exported="false" />
+
+        <receiver
+            android:name=".external.mms.MmsStatusReceiver"
+            android:exported="false" />
+
+        <provider
+            android:name=".external.mms.MmsFileProvider"
+            android:authorities="${applicationId}.mmsfiles"
+            android:exported="false"
+            android:grantUriPermissions="true" />
 
         <activity
             android:name=".SystemContactsEntrypointActivity"

@@ -83,6 +83,14 @@ fun ChatsSettingsScreen(
       scaffoldPadding = paddingValues,
       modifier = Modifier.testTag(ChatsSettingsTestTags.SCROLLER)
     ) {
+      // Fork: entry point to the SMS/MMS settings.
+      item {
+        Rows.TextRow(
+          text = stringResource(R.string.ChatsSettingsScreen__sms_and_mms),
+          onClick = { onEvent(ChatsSettingsEvents.SmsAndMmsClicked) }
+        )
+      }
+
       item {
         Rows.ToggleRow(
           modifier = Modifier.testTag(ChatsSettingsTestTags.ROW_GENERATE_LINK_PREVIEWS),

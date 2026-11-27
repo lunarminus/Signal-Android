@@ -46,6 +46,7 @@ import org.thoughtcrime.securesms.database.model.MmsMessageRecord;
 import org.thoughtcrime.securesms.database.model.ReactionRecord;
 import org.thoughtcrime.securesms.database.model.StoryType;
 import org.thoughtcrime.securesms.dependencies.AppDependencies;
+import org.thoughtcrime.securesms.external.ExternalMessageSender;
 import org.thoughtcrime.securesms.jobmanager.Job;
 import org.thoughtcrime.securesms.jobmanager.JobManager;
 import org.thoughtcrime.securesms.jobs.AdminDeleteSendJob;
@@ -225,7 +226,9 @@ public class MessageSender {
 
       long         allocatedThreadId = threadTable.getOrCreateValidThreadId(message.getThreadRecipient(), threadId, message.getDistributionType());
       Recipient    recipient         = message.getThreadRecipient();
-      InsertResult insertResult      = database.insertMessageOutbox(applyUniversalExpireTimerIfNecessary(context, recipient, message, allocatedThreadId), allocatedThreadId, sendType != SendType.SIGNAL, insertListener);
+      // Fork: external (SMS/MMS) messages never carry a disappearing-message timer.
+      OutgoingMessage toInsert          = sendType == SendType.SIGNAL ? applyUniversalExpireTimerIfNecessary(context, recipient, message, allocatedThreadId) : message;
+      InsertResult insertResult      = database.insertMessageOutbox(toInsert, allocatedThreadId, sendType != SendType.SIGNAL, insertListener);
       long         messageId         = insertResult.getMessageId();
 
 
@@ -618,7 +621,10 @@ public class MessageSender {
       finalUploadJobIds.add(uploadJob.getId());
     }
 
-    if (recipient.isPushGroup()) {
+    if (sendType != SendType.SIGNAL) {
+      // Fork: hand SMS/MMS (and future external transports) to the external transport framework.
+      ExternalMessageSender.enqueue(context, recipient, sendType, messageId);
+    } else if (recipient.isPushGroup()) {
       sendGroupPush(context, recipient, messageId, Collections.emptySet(), finalUploadJobIds);
     } else if (recipient.isDistributionList()) {
       sendDistributionList(context, recipient, messageId, Collections.emptySet(), finalUploadJobIds);

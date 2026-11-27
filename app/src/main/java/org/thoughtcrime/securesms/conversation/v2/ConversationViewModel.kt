@@ -5,6 +5,8 @@
 
 package org.thoughtcrime.securesms.conversation.v2
 
+import org.thoughtcrime.securesms.external.ExternalTransports
+import org.thoughtcrime.securesms.conversation.MessageSendType
 import android.content.Context
 import android.graphics.Rect
 import android.net.Uri
@@ -349,7 +351,8 @@ class ConversationViewModel(
         groupRecord = groupRecord.orNull(),
         isClientExpired = SignalStore.misc.isClientDeprecated,
         isUnauthorized = SignalStore.account.isUnauthorizedReceived,
-        threadContainsSms = !recipient.isRegistered && !recipient.isPushGroup && !recipient.isSelf && messageRequestRepository.threadContainsSms(threadId)
+        threadContainsSms = !recipient.isRegistered && !recipient.isPushGroup && !recipient.isSelf && messageRequestRepository.threadContainsSms(threadId),
+        canSendExternally = ExternalTransports.canReach(AppDependencies.application, recipient)
       )
     }.doOnNext {
       hasMessageRequestStateSubject.onNext(it.messageRequestState)
@@ -658,6 +661,7 @@ class ConversationViewModel(
   }
 
   fun sendMessage(
+    sendType: MessageSendType = MessageSendType.SignalMessageSendType,
     metricId: String?,
     body: String,
     slideDeck: SlideDeck?,
@@ -672,6 +676,7 @@ class ConversationViewModel(
     isViewOnce: Boolean
   ): Completable {
     return repository.sendMessage(
+      sendType = sendType,
       threadId = threadId,
       threadRecipient = recipientSnapshot ?: Recipient.resolved(recipientId),
       metricId = metricId,

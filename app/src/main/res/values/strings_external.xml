@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Fork: strings for external (SMS/MMS) messaging. Kept separate from strings.xml to ease rebases. -->
+<resources>
+    <!-- Send button / transport picker title for carrier messages -->
+    <string name="ExternalMessageSendType__sms_mms">SMS/MMS</string>
+    <!-- Send button / transport picker title for carrier messages from a given SIM. %1$s is the SIM name -->
+    <string name="ExternalMessageSendType__sms_mms_s">SMS/MMS (%1$s)</string>
+    <!-- Compose hint when the next message will be sent as an unencrypted carrier message -->
+    <string name="ExternalMessageSendType__unsecured_sms">Unencrypted SMS</string>
+    <!-- Transport picker entry for scheduling a Signal message -->
+    <string name="ExternalMessageSendType__schedule_message">Schedule message</string>
+    <!-- Toast when a carrier message can't be sent, e.g. not the default SMS app or no SIM -->
+    <string name="ExternalMessageSendType__cant_send_sms">This message can\'t be sent as SMS/MMS. Check that Signal SMS is your default SMS app.</string>
+
+    <!-- Chats settings entry that opens the SMS/MMS settings -->
+    <string name="ExternalMessagingSettings__sms_and_mms">SMS and MMS</string>
+    <!-- Title of the SMS/MMS settings screen -->
+    <string name="ExternalMessagingSettings__title">SMS and MMS</string>
+    <!-- Master switch: send and receive carrier messages in this app -->
+    <string name="ExternalMessagingSettings__use_sms_and_mms">Send and receive SMS/MMS</string>
+    <!-- Summary for the master switch -->
+    <string name="ExternalMessagingSettings__use_sms_and_mms_summary">Text contacts who aren\'t on Signal from the same inbox. SMS and MMS are not end-to-end encrypted.</string>
+    <!-- Row that asks Android to make this app the default SMS app -->
+    <string name="ExternalMessagingSettings__make_default">Make Signal SMS your default SMS app</string>
+    <!-- Summary when this app is already the default SMS app -->
+    <string name="ExternalMessagingSettings__is_default">Signal SMS is your default SMS app</string>
+    <!-- Summary when another app is the default SMS app -->
+    <string name="ExternalMessagingSettings__not_default">Needed to receive SMS reliably and to send and receive MMS</string>
+    <!-- Toggle: ask the carrier for delivery reports -->
+    <string name="ExternalMessagingSettings__delivery_reports">SMS delivery reports</string>
+    <!-- Summary for the delivery reports toggle -->
+    <string name="ExternalMessagingSettings__delivery_reports_summary">Show when an SMS reached the recipient. Some carriers charge for these.</string>
+    <!-- Toggle: copy messages into the Android system message store -->
+    <string name="ExternalMessagingSettings__keep_system_copy">Keep a copy in Android\'s message store</string>
+    <!-- Summary for the system copy toggle -->
+    <string name="ExternalMessagingSettings__keep_system_copy_summary">Lets backup tools and other SMS apps see your texts</string>
+    <!-- Toggle: default to Signal for contacts who are on Signal -->
+    <string name="ExternalMessagingSettings__prefer_signal">Prefer Signal when available</string>
+    <!-- Summary for the prefer-Signal toggle -->
+    <string name="ExternalMessagingSettings__prefer_signal_summary">Use Signal for contacts who are on Signal. Long-press the send button to switch.</string>
+    <!-- Toast when SMS permissions were denied -->
+    <string name="ExternalMessagingSettings__permissions_needed">Signal SMS needs SMS permissions to send and receive texts.</string>
+</resources>

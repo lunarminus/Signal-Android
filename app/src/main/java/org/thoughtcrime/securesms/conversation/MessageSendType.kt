@@ -42,6 +42,33 @@ sealed class MessageSendType(
     maxBodyByteSize = 2048
   )
 
+  /**
+   * Fork: a carrier message (SMS/MMS, and later other external transports). Which concrete transport
+   * carries it is decided at send time by [org.thoughtcrime.securesms.external.ExternalTransports].
+   *
+   * @param simSubscriptionId The SIM to send from, or -1 for the system default.
+   * @param simName Display name of that SIM, shown when the device has more than one.
+   */
+  @Parcelize
+  data class ExternalMessageSendType(
+    val simSubscriptionId: Int = -1,
+    val simName: String? = null
+  ) : MessageSendType(
+    titleRes = R.string.ExternalMessageSendType__sms_mms,
+    composeHintRes = R.string.ExternalMessageSendType__unsecured_sms,
+    buttonDrawableRes = R.drawable.ic_send_unlock_24,
+    transportType = TransportType.SMS,
+    maxBodyByteSize = Int.MAX_VALUE
+  ) {
+    override fun getTitle(context: Context): String {
+      return if (simName.isNullOrEmpty()) {
+        context.getString(R.string.ExternalMessageSendType__sms_mms)
+      } else {
+        context.getString(R.string.ExternalMessageSendType__sms_mms_s, simName)
+      }
+    }
+  }
+
   enum class TransportType {
     SIGNAL,
     SMS

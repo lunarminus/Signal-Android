@@ -659,6 +659,36 @@ class GroupTable(context: Context?, databaseHelper: SignalDatabase?) :
     return create(groupId, title, members, avatar, null, null, null, null)
   }
 
+  /**
+   * Fork: finds the MMS group whose members are exactly [members] (self included), creating it if needed.
+   */
+  @WorkerThread
+  fun getOrCreateMmsGroupForMembers(members: Collection<RecipientId>): GroupId.Mms {
+    val wanted: Set<RecipientId> = members.toSet()
+    require(wanted.isNotEmpty()) { "An MMS group needs members." }
+
+    val candidates: List<String> = readableDatabase
+      .select("$TABLE_NAME.$GROUP_ID")
+      .from("$TABLE_NAME INNER JOIN ${MembershipTable.TABLE_NAME} ON $TABLE_NAME.$GROUP_ID = ${MembershipTable.TABLE_NAME}.${MembershipTable.GROUP_ID}")
+      .where("$TABLE_NAME.$MMS = 1 AND ${MembershipTable.TABLE_NAME}.${MembershipTable.RECIPIENT_ID} = ?", wanted.first().serialize())
+      .run()
+      .readToList { it.requireNonNullString(GROUP_ID) }
+
+    for (candidate in candidates) {
+      val groupId = GroupId.parseOrThrow(candidate)
+      if (getCurrentMembers(groupId).toSet() == wanted) {
+        return groupId.requireMms()
+      }
+    }
+
+    val groupId = GroupId.createMms(SecureRandom())
+    val created = create(groupId, null, wanted)
+    if (!created) {
+      Log.w(TAG, "MMS group insert reported no change.")
+    }
+    return groupId
+  }
+
   @CheckReturnValue
   fun create(groupId: GroupId.Mms, title: String?, members: Collection<RecipientId>): Boolean {
     return create(groupId, if (title.isNullOrEmpty()) null else title, members, null, null, null, null, null)

@@ -20,6 +20,11 @@ sealed interface ChatsSettingsEvents {
   data object Refresh : ChatsSettingsEvents
 
   /**
+   * Fork: the user tapped the "SMS and MMS" row. Handled by the app module, which owns that screen.
+   */
+  data object SmsAndMmsClicked : ChatsSettingsEvents
+
+  /**
    * User tapped the navigation (back) icon.
    */
   data object NavigateBackClicked : ChatsSettingsEvents

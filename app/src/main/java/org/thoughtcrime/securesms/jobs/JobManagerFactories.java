@@ -214,6 +214,14 @@ public final class JobManagerFactories {
       put(IndividualSendJob.KEY,                       new IndividualSendJob.Factory());
       put(IndividualSendJobV2.KEY,                     new IndividualSendJobV2.Factory());
       put(LeaveGroupV2Job.KEY,                         new LeaveGroupV2Job.Factory());
+
+      // Fork: external (SMS/MMS) transport jobs
+      put(org.thoughtcrime.securesms.external.sms.SmsSendJob.KEY,      new org.thoughtcrime.securesms.external.sms.SmsSendJob.Factory());
+      put(org.thoughtcrime.securesms.external.sms.SmsStatusJob.KEY,    new org.thoughtcrime.securesms.external.sms.SmsStatusJob.Factory());
+      put(org.thoughtcrime.securesms.external.sms.SmsReceiveJob.KEY,   new org.thoughtcrime.securesms.external.sms.SmsReceiveJob.Factory());
+      put(org.thoughtcrime.securesms.external.mms.MmsSendJob.KEY,      new org.thoughtcrime.securesms.external.mms.MmsSendJob.Factory());
+      put(org.thoughtcrime.securesms.external.mms.MmsDownloadJob.KEY,  new org.thoughtcrime.securesms.external.mms.MmsDownloadJob.Factory());
+      put(org.thoughtcrime.securesms.external.mms.MmsResultJob.KEY,    new org.thoughtcrime.securesms.external.mms.MmsResultJob.Factory());
       put(LeaveGroupV2WorkerJob.KEY,                   new LeaveGroupV2WorkerJob.Factory());
       put(LinkedDeviceInactiveCheckJob.KEY,            new LinkedDeviceInactiveCheckJob.Factory());
       put(LocalArchiveJob.KEY,                         new LocalArchiveJob.Factory());

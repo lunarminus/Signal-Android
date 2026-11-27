@@ -5,6 +5,7 @@
 
 package org.thoughtcrime.securesms.conversation.v2
 
+import org.thoughtcrime.securesms.external.ExternalSendTypes
 import android.Manifest
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
@@ -1782,6 +1783,10 @@ class ConversationFragment :
       setPopupContainer(binding.root)
       setOnClickListener(sendButtonListener)
       setScheduledSendListener(sendButtonListener)
+      setSendTypeChangedListener { sendType ->
+        composeText.setMessageSendType(sendType)
+        updateLinkPreviewState()
+      }
       isEnabled = true
     }
 
@@ -2094,7 +2099,10 @@ class ConversationFragment :
       disabledInputView.clear()
     }
 
-    composeText.setMessageSendType(MessageSendType.SignalMessageSendType)
+    // Fork: offer Signal and/or SMS/MMS depending on who this conversation can reach.
+    val sendTypes = ExternalSendTypes.available(requireContext(), inputReadyState.conversationRecipient)
+    sendButton.setAvailableSendTypes(sendTypes, ExternalSendTypes.default(sendTypes))
+    composeText.setMessageSendType(sendButton.selectedSendType)
 
     invalidateOptionsMenu()
   }
@@ -2901,7 +2909,7 @@ class ConversationFragment :
   }
 
   private fun updateLinkPreviewState() {
-    if (viewModel.isPushAvailable && !attachmentManager.isAttachmentPresent && context != null && inputPanel.editMessage?.hasNonTextSlide() != true) {
+    if (viewModel.isPushAvailable && sendButton.selectedSendType.usesSignalTransport && !attachmentManager.isAttachmentPresent && context != null && inputPanel.editMessage?.hasNonTextSlide() != true) {
       linkPreviewViewModel.onEnabled()
       linkPreviewViewModel.onTextChanged(composeText.textTrimmed.toString(), composeText.selectionStart, composeText.selectionEnd)
     } else {
@@ -3032,6 +3040,7 @@ class ConversationFragment :
     preUploadResults: List<MessageSender.PreUploadResult> = emptyList(),
     bypassPreSendSafetyNumberCheck: Boolean = false,
     isViewOnce: Boolean = false,
+    sendType: MessageSendType = sendButton.selectedSendType,
     afterSendComplete: () -> Unit = {}
   ) {
     if (scheduledDate != -1L && ReenableScheduledMessagesDialogFragment.showIfNeeded(requireContext(), childFragmentManager, null, scheduledDate)) {
@@ -3071,6 +3080,7 @@ class ConversationFragment :
     val metricId = viewModel.recipientSnapshot?.let { if (it.isGroup) SignalLocalMetrics.GroupMessageSend.start() else SignalLocalMetrics.IndividualMessageSend.start() }
 
     val send: Completable = viewModel.sendMessage(
+      sendType = sendType,
       metricId = metricId,
       body = body,
       slideDeck = slideDeck,
@@ -3108,7 +3118,7 @@ class ConversationFragment :
         },
         onError = {
           Log.w(TAG, "Error received during send!", it)
-          toast(R.string.ConversationActivity_error_sending_media)
+          toast(if (sendType.usesSignalTransport) R.string.ConversationActivity_error_sending_media else R.string.ExternalMessageSendType__cant_send_sms)
         }
       )
   }
@@ -5201,12 +5211,17 @@ class ConversationFragment :
         return
       }
 
-      if (result.isPushPreUpload) {
+      // Fork: SMS/MMS can't use Signal's pre-uploaded attachments, so send the original media instead.
+      val sendingExternally = !sendButton.selectedSendType.usesSignalTransport
+
+      if (result.isPushPreUpload && !sendingExternally) {
         sendPreUploadMediaMessage(result)
         return
       }
 
-      val slides: List<Slide> = result.nonUploadedMedia.mapNotNull {
+      val mediaToSend = if (result.isPushPreUpload) result.preUploadResults.map { it.media } else result.nonUploadedMedia
+
+      val slides: List<Slide> = mediaToSend.mapNotNull {
         when {
           MediaUtil.isVideoType(it.contentType) -> VideoSlide(requireContext(), it.uri, it.size, it.isVideoGif, it.width, it.height, it.caption, it.transformProperties)
 

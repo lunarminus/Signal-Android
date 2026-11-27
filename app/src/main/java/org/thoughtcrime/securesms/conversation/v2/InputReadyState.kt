@@ -19,7 +19,9 @@ class InputReadyState(
   val groupRecord: GroupRecord?,
   val isClientExpired: Boolean,
   val isUnauthorized: Boolean,
-  val threadContainsSms: Boolean
+  val threadContainsSms: Boolean,
+  /** Fork: whether SMS/MMS can reach this conversation, so the composer stays enabled for non-Signal contacts. */
+  val canSendExternally: Boolean = false
 ) {
   private val selfMemberLevel: GroupTable.MemberLevel? = groupRecord?.let {
     val level = it.memberLevel(Recipient.self())
@@ -36,7 +38,8 @@ class InputReadyState(
   val isRequestingMember: Boolean? = selfMemberLevel?.equals(GroupTable.MemberLevel.REQUESTING_MEMBER)
 
   fun shouldShowInviteToSignal(): Boolean {
-    return !conversationRecipient.isPushGroup &&
+    return !canSendExternally &&
+      !conversationRecipient.isPushGroup &&
       !conversationRecipient.isRegistered &&
       !conversationRecipient.isReleaseNotes
   }
@@ -60,6 +63,7 @@ class InputReadyState(
     if (groupRecord != other.groupRecord) return false
     if (isClientExpired != other.isClientExpired) return false
     if (isUnauthorized != other.isUnauthorized) return false
+    if (canSendExternally != other.canSendExternally) return false
 
     return true
   }

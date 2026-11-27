@@ -5,6 +5,9 @@
 
 package org.thoughtcrime.securesms.conversation.v2
 
+import org.thoughtcrime.securesms.external.ExternalTransports
+import org.thoughtcrime.securesms.external.ExternalMessageSender
+import org.thoughtcrime.securesms.conversation.MessageSendType
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
@@ -504,6 +507,7 @@ class ConversationRepository(
   }
 
   fun sendMessage(
+    sendType: MessageSendType = MessageSendType.SignalMessageSendType,
     threadId: Long,
     threadRecipient: Recipient,
     metricId: String?,
@@ -519,6 +523,10 @@ class ConversationRepository(
     preUploadResults: List<PreUploadResult>,
     isViewOnce: Boolean
   ): Completable {
+    if (!sendType.usesSignalTransport) {
+      return sendExternalMessage(sendType, threadId, threadRecipient, metricId, body, slideDeck, contacts)
+    }
+
     val sendCompletable = Completable.create { emitter ->
       val splitMessage: MessageUtil.SplitResult = MessageUtil.getSplitMessage(
         applicationContext,
@@ -577,6 +585,48 @@ class ConversationRepository(
 
     return sendCompletable
       .subscribeOn(Schedulers.io())
+  }
+
+  /**
+   * Fork: sends a message over an external transport (SMS/MMS). Signal-only features (quotes, mentions,
+   * formatting, link previews, view-once, disappearing timers) are dropped by [ExternalMessageSender.prepare].
+   */
+  private fun sendExternalMessage(
+    sendType: MessageSendType,
+    threadId: Long,
+    threadRecipient: Recipient,
+    metricId: String?,
+    body: String,
+    slideDeck: SlideDeck?,
+    contacts: List<Contact>
+  ): Completable {
+    return Completable.create { emitter ->
+      val message = OutgoingMessage(
+        threadRecipient = threadRecipient,
+        sentTimeMillis = System.currentTimeMillis(),
+        body = body,
+        attachments = slideDeck?.asAttachments() ?: emptyList(),
+        sharedContacts = contacts,
+        isSecure = false,
+        subscriptionId = (sendType as? MessageSendType.ExternalMessageSendType)?.simSubscriptionId ?: -1
+      )
+
+      val transport = ExternalTransports.select(applicationContext, threadRecipient, message)
+      if (transport == null) {
+        emitter.tryOnError(IllegalStateException("No external transport can send this message."))
+        return@create
+      }
+
+      MessageSender.send(
+        AppDependencies.application,
+        ExternalMessageSender.prepare(message, transport),
+        threadId,
+        transport.type.toSendType(),
+        metricId
+      ) {
+        emitter.onComplete()
+      }
+    }.subscribeOn(Schedulers.io())
   }
 
   fun setLastVisibleMessageTimestamp(threadId: Long, lastVisibleMessageTimestamp: Long) {

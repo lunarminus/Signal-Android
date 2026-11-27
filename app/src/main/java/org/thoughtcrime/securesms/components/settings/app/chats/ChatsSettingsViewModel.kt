@@ -62,6 +62,7 @@ class ChatsSettingsViewModel(
   override suspend fun processEvent(event: ChatsSettingsEvents) {
     when (event) {
       ChatsSettingsEvents.Refresh -> refresh()
+      ChatsSettingsEvents.SmsAndMmsClicked -> Unit // Fork: handled in ChatsSettingsEntry, which can start activities.
       is ChatsSettingsEvents.PlaintextExportProgressChanged -> applyPlaintextExportProgress(event.progress)
       is ChatsSettingsEvents.GenerateLinkPreviewsChanged -> setGenerateLinkPreviewsEnabled(event.enabled)
       is ChatsSettingsEvents.UseAddressBookChanged -> setUseAddressBook(event.enabled)
