@@ -18,13 +18,25 @@ enum class ExternalTransportType(val id: String) {
   SMS("sms"),
 
   /** Carrier multimedia messages, also used for group threads and long or rich content. */
-  MMS("mms");
+  MMS("mms"),
 
-  /** The legacy [MessageSender.SendType] that the shared send pipeline uses for this transport. */
+  /**
+   * Rich Communication Services: carrier (Jibe-backed) messaging with receipts, typing, reactions,
+   * large attachments and, under GSMA Universal Profile 3.0, MLS end-to-end encryption. Preferred
+   * over SMS/MMS when a contact is reachable; see [org.thoughtcrime.securesms.external.rcs.RcsTransport].
+   */
+  RCS("rcs");
+
+  /**
+   * The [MessageSender.SendType] the shared send pipeline uses when storing this transport's
+   * messages. RCS rows are stored like MMS (they can carry attachments and group threads); the
+   * concrete transport is resolved separately from the tag on [MessageExtras], not from this.
+   */
   fun toSendType(): MessageSender.SendType {
     return when (this) {
       SMS -> MessageSender.SendType.SMS
       MMS -> MessageSender.SendType.MMS
+      RCS -> MessageSender.SendType.MMS
     }
   }
 

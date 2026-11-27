@@ -222,6 +222,10 @@ public final class JobManagerFactories {
       put(org.thoughtcrime.securesms.external.mms.MmsSendJob.KEY,      new org.thoughtcrime.securesms.external.mms.MmsSendJob.Factory());
       put(org.thoughtcrime.securesms.external.mms.MmsDownloadJob.KEY,  new org.thoughtcrime.securesms.external.mms.MmsDownloadJob.Factory());
       put(org.thoughtcrime.securesms.external.mms.MmsResultJob.KEY,    new org.thoughtcrime.securesms.external.mms.MmsResultJob.Factory());
+      // Fork: external RCS transport jobs
+      put(org.thoughtcrime.securesms.external.rcs.jobs.RcsSendJob.KEY,              new org.thoughtcrime.securesms.external.rcs.jobs.RcsSendJob.Factory());
+      put(org.thoughtcrime.securesms.external.rcs.jobs.RcsProvisioningJob.KEY,      new org.thoughtcrime.securesms.external.rcs.jobs.RcsProvisioningJob.Factory());
+      put(org.thoughtcrime.securesms.external.rcs.jobs.RcsCapabilityRefreshJob.KEY, new org.thoughtcrime.securesms.external.rcs.jobs.RcsCapabilityRefreshJob.Factory());
       put(LeaveGroupV2WorkerJob.KEY,                   new LeaveGroupV2WorkerJob.Factory());
       put(LinkedDeviceInactiveCheckJob.KEY,            new LinkedDeviceInactiveCheckJob.Factory());
       put(LocalArchiveJob.KEY,                         new LocalArchiveJob.Factory());

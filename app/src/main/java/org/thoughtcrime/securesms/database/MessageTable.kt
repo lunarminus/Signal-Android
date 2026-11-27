@@ -2409,6 +2409,32 @@ open class MessageTable(context: Context?, databaseHelper: SignalDatabase) : Dat
     AppDependencies.databaseObserver.notifyConversationListListeners()
   }
 
+  /** Fork: replaces the stored [MessageExtras] for a message, used to re-tag the external transport on fallback. */
+  fun updateMessageExtras(messageId: Long, extras: MessageExtras) {
+    writableDatabase
+      .update(TABLE_NAME)
+      .values(MESSAGE_EXTRAS to extras.encode())
+      .where("$ID = ?", messageId)
+      .run()
+    AppDependencies.databaseObserver.notifyMessageUpdateObservers(MessageId(messageId))
+  }
+
+  /** Fork: the stored [MessageExtras] for a message, or null. */
+  fun getMessageExtras(messageId: Long): MessageExtras? {
+    return readableDatabase
+      .select(MESSAGE_EXTRAS)
+      .from(TABLE_NAME)
+      .where("$ID = ?", messageId)
+      .run()
+      .use { cursor ->
+        if (cursor.moveToFirst()) {
+          cursor.requireBlob(MESSAGE_EXTRAS)?.let { MessageExtras.ADAPTER.decode(it) }
+        } else {
+          null
+        }
+      }
+  }
+
   /** Fork: records a carrier delivery report for a message sent over an external transport. */
   fun markExternalAsDelivered(messageId: Long, deliveredTimestamp: Long) {
     writableDatabase

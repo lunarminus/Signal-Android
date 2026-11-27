@@ -28,6 +28,9 @@ object ExternalTransports {
 
   private val transports: List<ExternalTransport> by lazy {
     listOf(
+      // RCS is tried first: when a contact is reachable over RCS it is preferred, otherwise the
+      // registry falls through to MMS, then plain SMS.
+      org.thoughtcrime.securesms.external.rcs.RcsTransport,
       SmsTransport,
       MmsTransport
     )

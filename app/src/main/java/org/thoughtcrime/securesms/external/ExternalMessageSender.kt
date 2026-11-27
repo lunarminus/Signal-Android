@@ -39,7 +39,8 @@ object ExternalMessageSender {
       linkPreviews = emptyList(),
       sharedContacts = if (capabilities.supportsAttachments) message.sharedContacts else emptyList(),
       attachments = if (capabilities.supportsAttachments) message.attachments else emptyList(),
-      messageToEdit = 0
+      // Edits are a Signal-protocol construct; only keep the edit target for a transport that can carry edits (e.g. RCS).
+      messageToEdit = if (capabilities.supportsEdits) message.messageToEdit else 0
     )
     return ExternalTransports.tag(stripped, transport.type)
   }
@@ -50,7 +51,10 @@ object ExternalMessageSender {
   @JvmStatic
   @WorkerThread
   fun enqueue(context: Context, recipient: Recipient, sendType: MessageSender.SendType, messageId: Long) {
-    val type = ExternalTransportType.fromSendType(sendType)
+    // Prefer the transport recorded on the stored message (set by prepare()), since several
+    // transports — MMS and RCS — share the same MMS send type. Fall back to the send type.
+    val taggedType = ExternalTransports.typeOf(SignalDatabase.messages.getMessageExtras(messageId))
+    val type = taggedType ?: ExternalTransportType.fromSendType(sendType)
     if (type == null) {
       Log.w(TAG, "Not an external send type: $sendType")
       return
