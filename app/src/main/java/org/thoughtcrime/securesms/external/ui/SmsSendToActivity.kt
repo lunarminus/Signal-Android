@@ -15,6 +15,7 @@ import org.signal.core.util.logging.Log
 import org.thoughtcrime.securesms.MainActivity
 import org.thoughtcrime.securesms.conversation.ConversationIntents
 import org.thoughtcrime.securesms.database.SignalDatabase
+import org.thoughtcrime.securesms.recipients.Recipient
 import org.thoughtcrime.securesms.external.ExternalIncomingMessages
 
 /**
@@ -58,7 +59,8 @@ class SmsSendToActivity : Activity() {
     val recipientId = address?.let { ExternalIncomingMessages.resolveAddress(it.substringBefore(',').substringBefore(';')) }
       ?: return MainActivity.clearTop(this)
 
-    val threadId = SignalDatabase.threads.getThreadIdIfExistsFor(recipientId)
+    // A conversation needs a real thread, so make one for people we've never talked to.
+    val threadId = SignalDatabase.threads.getOrCreateThreadIdFor(Recipient.resolved(recipientId))
     return ConversationIntents.createBuilderSync(this, recipientId, threadId)
       .withDraftText(body)
       .build()
