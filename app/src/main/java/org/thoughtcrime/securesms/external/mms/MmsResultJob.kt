@@ -9,7 +9,6 @@ import android.app.Activity
 import android.net.Uri
 import org.signal.core.models.recipients.RecipientId
 import org.signal.core.util.Base64
-import org.signal.core.util.contentproviders.BlobProvider
 import org.signal.core.util.logging.Log
 import org.thoughtcrime.securesms.attachments.Attachment
 import org.thoughtcrime.securesms.attachments.UriAttachment
@@ -189,7 +188,7 @@ class MmsResultJob private constructor(
       return
     }
 
-    val others: Set<RecipientId> = (retrieved.to.orEmpty() + retrieved.cc.orEmpty())
+    val others: Set<RecipientId> = (retrieved.to.orEmpty().toList() + retrieved.cc.orEmpty().toList())
       .mapNotNull { it?.string }
       .filterNot { isSelf(it) }
       .mapNotNull { ExternalIncomingMessages.resolveAddress(it) }
@@ -218,7 +217,7 @@ class MmsResultJob private constructor(
         contentType == ContentType.TEXT_PLAIN -> textParts += decodeText(data, part.charset)
         else -> {
           val name = (part.filename ?: part.name ?: part.contentLocation)?.let { String(it, Charsets.UTF_8) }
-          val uri = BlobProvider.getInstance().forData(data).createForSingleSessionInMemory()
+          val uri = AppDependencies.blobs.forData(data).createForSingleSessionInMemory()
           attachments += UriAttachment(
             uri = uri,
             contentType = contentType,
